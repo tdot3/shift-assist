@@ -1,0 +1,1348 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1">
+
+    <title>Shift Assist | ダッシュボード</title>
+
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+        rel="stylesheet">
+
+    <style>
+
+        body {
+            margin: 0;
+            background: #f6f7f9;
+            color: #20242a;
+            font-family:
+                -apple-system,
+                BlinkMacSystemFont,
+                "Hiragino Kaku Gothic ProN",
+                "Yu Gothic",
+                sans-serif;
+        }
+
+
+        /* =========================
+           Sidebar
+        ========================= */
+
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            bottom: 0;
+
+            width: 240px;
+
+            background: #ffffff;
+
+            border-right: 1px solid #e8eaed;
+
+            padding: 28px 18px;
+
+            z-index: 1000;
+        }
+
+
+        .brand {
+            padding: 0 12px 28px 12px;
+        }
+
+
+        .brand-title {
+            font-size: 22px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+
+        .brand-subtitle {
+            margin-top: 3px;
+
+            font-size: 12px;
+            color: #8a9099;
+        }
+
+
+        .menu-label {
+            padding: 0 12px;
+            margin-bottom: 8px;
+
+            font-size: 11px;
+            font-weight: 700;
+
+            color: #a0a5ad;
+
+            letter-spacing: 0.08em;
+        }
+
+
+        .menu-link {
+            display: flex;
+            align-items: center;
+
+            padding: 11px 12px;
+            margin-bottom: 4px;
+
+            border-radius: 8px;
+
+            text-decoration: none;
+
+            color: #5a6069;
+
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+
+        .menu-link:hover {
+            background: #f3f5f7;
+            color: #20242a;
+        }
+
+
+        .menu-link.active {
+            background: #eef3ff;
+            color: #2457d6;
+            font-weight: 700;
+        }
+
+
+        .menu-badge {
+            margin-left: auto;
+
+            min-width: 22px;
+
+            padding: 2px 7px;
+
+            border-radius: 999px;
+
+            background: #dc3545;
+
+            color: #ffffff;
+
+            text-align: center;
+
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+
+        .sidebar-bottom {
+            position: absolute;
+
+            left: 18px;
+            right: 18px;
+            bottom: 22px;
+        }
+
+
+        /* =========================
+           Main
+        ========================= */
+
+        .main {
+            margin-left: 240px;
+
+            min-height: 100vh;
+
+            padding: 40px 46px 60px;
+        }
+
+
+        .content {
+            max-width: 1180px;
+            margin: 0 auto;
+        }
+
+
+        .page-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+
+            margin-bottom: 28px;
+        }
+
+
+        .page-title {
+            margin: 0;
+
+            font-size: 28px;
+            font-weight: 700;
+
+            letter-spacing: -0.6px;
+        }
+
+
+        .page-description {
+            margin-top: 6px;
+
+            color: #7b818a;
+            font-size: 14px;
+        }
+
+
+        /* =========================
+           Month navigation
+        ========================= */
+
+        .month-navigation {
+            display: flex;
+            gap: 8px;
+        }
+
+
+        .month-button {
+            padding: 8px 14px;
+
+            border: 1px solid #dfe2e6;
+
+            border-radius: 8px;
+
+            background: #ffffff;
+
+            color: #555b64;
+
+            text-decoration: none;
+
+            font-size: 13px;
+        }
+
+
+        .month-button:hover {
+            background: #f7f8fa;
+            color: #20242a;
+        }
+
+
+        /* =========================
+           Action area
+        ========================= */
+
+        .action-panel {
+            background: #ffffff;
+
+            border: 1px solid #e6e8eb;
+            border-radius: 12px;
+
+            margin-bottom: 24px;
+
+            overflow: hidden;
+        }
+
+
+        .action-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+
+            padding: 20px 22px;
+
+            border-bottom: 1px solid #eceef0;
+        }
+
+
+        .action-title {
+            margin: 0;
+
+            font-size: 17px;
+            font-weight: 700;
+        }
+
+
+        .action-subtitle {
+            margin-top: 4px;
+
+            font-size: 13px;
+            color: #838992;
+        }
+
+
+        .action-list {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+        }
+
+
+        .action-item {
+            padding: 22px;
+
+            text-decoration: none;
+            color: inherit;
+        }
+
+
+        .action-item:first-child {
+            border-right: 1px solid #eceef0;
+        }
+
+
+        .action-item:hover {
+            background: #fafbfc;
+        }
+
+
+        .action-item-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+
+            margin-bottom: 6px;
+
+            font-size: 15px;
+            font-weight: 700;
+        }
+
+
+        .action-number-danger {
+            color: #d9363e;
+            font-size: 26px;
+            font-weight: 700;
+        }
+
+
+        .action-number-warning {
+            color: #c48300;
+            font-size: 26px;
+            font-weight: 700;
+        }
+
+
+        .action-detail {
+            font-size: 13px;
+            color: #7b818a;
+        }
+
+
+        /* =========================
+           Summary
+        ========================= */
+
+        .summary-strip {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+
+            background: #ffffff;
+
+            border: 1px solid #e6e8eb;
+            border-radius: 12px;
+
+            margin-bottom: 24px;
+        }
+
+
+        .summary-item {
+            padding: 20px 22px;
+
+            border-right: 1px solid #eceef0;
+        }
+
+
+        .summary-item:last-child {
+            border-right: 0;
+        }
+
+
+        .summary-label {
+            margin-bottom: 8px;
+
+            font-size: 12px;
+            color: #858b94;
+        }
+
+
+        .summary-value {
+            font-size: 28px;
+            font-weight: 700;
+        }
+
+
+        .summary-unit {
+            margin-left: 3px;
+
+            font-size: 13px;
+            color: #858b94;
+        }
+
+
+        .danger-text {
+            color: #d9363e;
+        }
+
+
+        /* =========================
+           Section
+        ========================= */
+
+        .section {
+            background: #ffffff;
+
+            border: 1px solid #e6e8eb;
+            border-radius: 12px;
+
+            margin-bottom: 24px;
+
+            overflow: hidden;
+        }
+
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+
+            padding: 20px 22px;
+
+            border-bottom: 1px solid #eceef0;
+        }
+
+
+        .section-title {
+            margin: 0;
+
+            font-size: 17px;
+            font-weight: 700;
+        }
+
+
+        .section-note {
+            margin-top: 3px;
+
+            font-size: 12px;
+            color: #858b94;
+        }
+
+
+        .status-danger {
+            display: inline-block;
+
+            padding: 5px 10px;
+
+            border-radius: 6px;
+
+            background: #fff0f0;
+
+            color: #c92d34;
+
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+
+        .status-success {
+            display: inline-block;
+
+            padding: 5px 10px;
+
+            border-radius: 6px;
+
+            background: #edf8f2;
+
+            color: #218553;
+
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+
+        .status-auto {
+            display: inline-block;
+
+            padding: 4px 8px;
+
+            border-radius: 5px;
+
+            background: #edf8f2;
+
+            color: #218553;
+
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+
+        .status-manual {
+            display: inline-block;
+
+            padding: 4px 8px;
+
+            border-radius: 5px;
+
+            background: #f0f1f3;
+
+            color: #686e77;
+
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+
+        /* =========================
+           Table
+        ========================= */
+
+        .custom-table {
+            width: 100%;
+            margin: 0;
+
+            border-collapse: collapse;
+        }
+
+
+        .custom-table th {
+            padding: 13px 20px;
+
+            background: #fafbfc;
+
+            border-bottom: 1px solid #eceef0;
+
+            color: #747a83;
+
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+
+        .custom-table td {
+            padding: 15px 20px;
+
+            border-bottom: 1px solid #f0f1f2;
+
+            font-size: 14px;
+        }
+
+
+        .custom-table tr:last-child td {
+            border-bottom: 0;
+        }
+
+
+        .shortage-number {
+            color: #d9363e;
+            font-weight: 700;
+        }
+
+
+        .empty-state {
+            padding: 40px;
+
+            text-align: center;
+
+            color: #858b94;
+
+            font-size: 14px;
+        }
+
+
+        /* =========================
+           Responsive
+        ========================= */
+
+        @media (
+            max-width: 900px
+        ) {
+
+            .sidebar {
+                position: static;
+
+                width: 100%;
+                height: auto;
+
+                padding: 18px;
+
+                border-right: 0;
+                border-bottom: 1px solid #e8eaed;
+            }
+
+            .sidebar-bottom {
+                position: static;
+
+                margin-top: 12px;
+            }
+
+            .brand {
+                padding-bottom: 15px;
+            }
+
+            .main {
+                margin-left: 0;
+                padding: 24px 16px 40px;
+            }
+
+            .page-header {
+                display: block;
+            }
+
+            .month-navigation {
+                margin-top: 18px;
+            }
+
+            .action-list {
+                grid-template-columns: 1fr;
+            }
+
+            .action-item:first-child {
+                border-right: 0;
+                border-bottom: 1px solid #eceef0;
+            }
+
+            .summary-strip {
+                grid-template-columns:
+                    1fr 1fr;
+            }
+
+            .summary-item:nth-child(2) {
+                border-right: 0;
+            }
+
+            .summary-item:nth-child(-n+2) {
+                border-bottom: 1px solid #eceef0;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+<!-- ==========================================
+     Sidebar
+========================================== -->
+
+<aside class="sidebar">
+
+
+    <div class="brand">
+
+        <div class="brand-title">
+            Shift Assist
+        </div>
+
+        <div class="brand-subtitle">
+            アルバイトシフト管理
+        </div>
+
+    </div>
+
+
+    <div class="menu-label">
+        MANAGEMENT
+    </div>
+
+
+    <a
+        href="/dashboard"
+        class="menu-link active">
+
+        ダッシュボード
+
+    </a>
+
+
+    <a
+        href="/"
+        class="menu-link">
+
+        シフト管理
+
+    </a>
+
+
+    <a
+        href="/weekly"
+        class="menu-link">
+
+        週間シフト
+
+    </a>
+
+
+    <a
+        href="/staff"
+        class="menu-link">
+
+        スタッフ管理
+
+    </a>
+
+
+    <a
+        href="/requirements"
+        class="menu-link">
+
+        必要人数設定
+
+    </a>
+
+
+    <a
+        href="/requests"
+        class="menu-link">
+
+        申請管理
+
+        {% if pending_request_count > 0 %}
+
+            <span class="menu-badge">
+
+                {{ pending_request_count }}
+
+            </span>
+
+        {% endif %}
+
+    </a>
+
+
+    <div class="sidebar-bottom">
+
+        <a
+            href="/logout"
+            class="menu-link">
+
+            ログアウト
+
+        </a>
+
+    </div>
+
+
+</aside>
+
+
+<!-- ==========================================
+     Main
+========================================== -->
+
+<main class="main">
+
+
+    <div class="content">
+
+
+        <!-- Header -->
+
+        <div class="page-header">
+
+
+            <div>
+
+                <h1 class="page-title">
+                    シフト調整状況
+                </h1>
+
+                <div class="page-description">
+
+                    {{ month_title }}の勤務状況と、
+                    今後対応が必要な項目を確認できます。
+
+                </div>
+
+            </div>
+
+
+            <div class="month-navigation">
+
+                <a
+                    href="/dashboard?month={{ previous_month }}"
+                    class="month-button">
+
+                    ← 前月
+
+                </a>
+
+
+                <a
+                    href="/dashboard"
+                    class="month-button">
+
+                    今月
+
+                </a>
+
+
+                <a
+                    href="/dashboard?month={{ next_month }}"
+                    class="month-button">
+
+                    次月 →
+
+                </a>
+
+            </div>
+
+
+        </div>
+
+
+        <!-- ==================================
+             管理者需要处理的事项
+        =================================== -->
+
+        <section class="action-panel">
+
+
+            <div class="action-header">
+
+
+                <div>
+
+                    <h2 class="action-title">
+                        対応が必要な項目
+                    </h2>
+
+                    <div class="action-subtitle">
+                        管理者の確認が必要な項目をまとめています。
+                    </div>
+
+                </div>
+
+
+                {% if
+                    pending_request_count == 0
+                    and future_shortage_count == 0
+                %}
+
+                    <span class="status-success">
+                        対応項目なし
+                    </span>
+
+                {% endif %}
+
+
+            </div>
+
+
+            <div class="action-list">
+
+
+                <a
+                    href="/requests"
+                    class="action-item">
+
+
+                    <div class="action-item-title">
+
+                        スタッフ申請
+
+                    </div>
+
+
+                    <div class="action-number-warning">
+
+                        {{ pending_request_count }}
+
+                        <span class="summary-unit">
+                            件
+                        </span>
+
+                    </div>
+
+
+                    <div class="action-detail">
+
+                        休暇・勤務時間変更の確認待ち
+
+                    </div>
+
+
+                </a>
+
+
+                <div class="action-item">
+
+
+                    <div class="action-item-title">
+
+                        今後60日間の人員不足
+
+                    </div>
+
+
+                    <div class="action-number-danger">
+
+                        {{ future_shortage_count }}
+
+                        <span class="summary-unit">
+                            人分
+                        </span>
+
+                    </div>
+
+
+                    <div class="action-detail">
+
+                        {{ alert_start }}
+                        ～
+                        {{ alert_end }}
+
+                    </div>
+
+
+                </div>
+
+
+            </div>
+
+
+        </section>
+
+
+        <!-- ==================================
+             月度概况
+        =================================== -->
+
+        <section class="summary-strip">
+
+
+            <div class="summary-item">
+
+                <div class="summary-label">
+                    登録スタッフ
+                </div>
+
+                <span class="summary-value">
+                    {{ total_staff }}
+                </span>
+
+                <span class="summary-unit">
+                    人
+                </span>
+
+            </div>
+
+
+            <div class="summary-item">
+
+                <div class="summary-label">
+                    {{ month_title }}のシフト
+                </div>
+
+                <span class="summary-value">
+                    {{ month_shift_count }}
+                </span>
+
+                <span class="summary-unit">
+                    件
+                </span>
+
+            </div>
+
+
+            <div class="summary-item">
+
+                <div class="summary-label">
+                    自動作成
+                </div>
+
+                <span class="summary-value">
+                    {{ auto_shift_count }}
+                </span>
+
+                <span class="summary-unit">
+                    件
+                </span>
+
+            </div>
+
+
+            <div class="summary-item">
+
+                <div class="summary-label">
+                    {{ month_title }}の人員不足
+                </div>
+
+                <span
+                    class="
+                        summary-value
+
+                        {% if month_shortage_count > 0 %}
+                            danger-text
+                        {% endif %}
+                    ">
+
+                    {{ month_shortage_count }}
+
+                </span>
+
+                <span class="summary-unit">
+                    人分
+                </span>
+
+            </div>
+
+
+        </section>
+
+
+        <!-- ==================================
+             人员不足
+        =================================== -->
+
+        <section class="section">
+
+
+            <div class="section-header">
+
+
+                <div>
+
+                    <h2 class="section-title">
+                        今後の人員不足
+                    </h2>
+
+                    <div class="section-note">
+
+                        必要人数に対して、
+                        配置人数が不足している時間帯です。
+
+                    </div>
+
+                </div>
+
+
+                {% if future_shortage_count > 0 %}
+
+                    <span class="status-danger">
+
+                        {{ future_shortage_count }}
+                        人分不足
+
+                    </span>
+
+                {% else %}
+
+                    <span class="status-success">
+
+                        人員不足なし
+
+                    </span>
+
+                {% endif %}
+
+
+            </div>
+
+
+            {% if shortage_alerts %}
+
+
+                <div class="table-responsive">
+
+
+                    <table class="custom-table">
+
+
+                        <thead>
+
+                            <tr>
+
+                                <th>
+                                    日付
+                                </th>
+
+                                <th>
+                                    時間帯
+                                </th>
+
+                                <th>
+                                    必要人数
+                                </th>
+
+                                <th>
+                                    配置済み
+                                </th>
+
+                                <th>
+                                    不足
+                                </th>
+
+                                <th>
+                                    状態
+                                </th>
+
+                            </tr>
+
+                        </thead>
+
+
+                        <tbody>
+
+
+                            {% for item in shortage_alerts %}
+
+
+                                <tr>
+
+
+                                    <td>
+
+                                        <strong>
+                                            {{ item.work_date }}
+                                        </strong>
+
+                                    </td>
+
+
+                                    <td>
+
+                                        {{ item.start_time }}
+                                        ～
+                                        {{ item.end_time }}
+
+                                    </td>
+
+
+                                    <td>
+
+                                        {{ item.required_staff }}
+                                        人
+
+                                    </td>
+
+
+                                    <td>
+
+                                        {{ item.assigned_staff }}
+                                        人
+
+                                    </td>
+
+
+                                    <td class="shortage-number">
+
+                                        {{ item.shortage }}
+                                        人
+
+                                    </td>
+
+
+                                    <td>
+
+                                        <span class="status-danger">
+
+                                            要対応
+
+                                        </span>
+
+                                    </td>
+
+
+                                </tr>
+
+
+                            {% endfor %}
+
+
+                        </tbody>
+
+
+                    </table>
+
+
+                </div>
+
+
+            {% else %}
+
+
+                <div class="empty-state">
+
+                    今後60日間で、
+                    人員不足は検出されていません。
+
+                </div>
+
+
+            {% endif %}
+
+
+        </section>
+
+
+        <!-- ==================================
+             Upcoming shifts
+        =================================== -->
+
+        <section class="section">
+
+
+            <div class="section-header">
+
+
+                <div>
+
+                    <h2 class="section-title">
+
+                        今後のシフト
+
+                    </h2>
+
+
+                    <div class="section-note">
+
+                        直近の登録済みシフト
+
+                    </div>
+
+                </div>
+
+
+                <a
+                    href="/weekly"
+                    class="month-button">
+
+                    週間表示を見る
+
+                </a>
+
+
+            </div>
+
+
+            {% if upcoming_shifts %}
+
+
+                <div class="table-responsive">
+
+
+                    <table class="custom-table">
+
+
+                        <thead>
+
+                            <tr>
+
+                                <th>
+                                    スタッフ
+                                </th>
+
+                                <th>
+                                    日付
+                                </th>
+
+                                <th>
+                                    勤務時間
+                                </th>
+
+                                <th>
+                                    作成方法
+                                </th>
+
+                            </tr>
+
+                        </thead>
+
+
+                        <tbody>
+
+
+                            {% for shift in upcoming_shifts %}
+
+
+                                <tr>
+
+
+                                    <td>
+
+                                        <strong>
+                                            {{ shift.name }}
+                                        </strong>
+
+                                    </td>
+
+
+                                    <td>
+
+                                        {{ shift.shift_date }}
+
+                                    </td>
+
+
+                                    <td>
+
+                                        {{ shift.start_time }}
+                                        ～
+                                        {{ shift.end_time }}
+
+                                    </td>
+
+
+                                    <td>
+
+
+                                        {% if shift.source == "auto" %}
+
+                                            <span class="status-auto">
+
+                                                自動
+
+                                            </span>
+
+                                        {% else %}
+
+                                            <span class="status-manual">
+
+                                                手動
+
+                                            </span>
+
+                                        {% endif %}
+
+
+                                    </td>
+
+
+                                </tr>
+
+
+                            {% endfor %}
+
+
+                        </tbody>
+
+
+                    </table>
+
+
+                </div>
+
+
+            {% else %}
+
+
+                <div class="empty-state">
+
+                    今後のシフトはありません。
+
+                </div>
+
+
+            {% endif %}
+
+
+        </section>
+
+
+    </div>
+
+
+</main>
+
+
+</body>
+
+</html>

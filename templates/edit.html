@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1">
+
+    <title>Shift Assist | シフト編集</title>
+
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+        rel="stylesheet">
+
+    <style>
+
+        body {
+            margin: 0;
+
+            background: #f6f7f9;
+            color: #20242a;
+
+            font-family:
+                -apple-system,
+                BlinkMacSystemFont,
+                "Hiragino Kaku Gothic ProN",
+                "Yu Gothic",
+                sans-serif;
+        }
+
+
+        /* =========================
+           Sidebar
+        ========================= */
+
+        .sidebar {
+            position: fixed;
+
+            left: 0;
+            top: 0;
+            bottom: 0;
+
+            width: 240px;
+
+            background: #ffffff;
+
+            border-right: 1px solid #e8eaed;
+
+            padding: 28px 18px;
+
+            z-index: 1000;
+        }
+
+
+        .brand {
+            padding: 0 12px 28px;
+        }
+
+
+        .brand-title {
+            font-size: 22px;
+            font-weight: 700;
+
+            letter-spacing: -0.5px;
+        }
+
+
+        .brand-subtitle {
+            margin-top: 3px;
+
+            color: #8a9099;
+
+            font-size: 12px;
+        }
+
+
+        .menu-label {
+            padding: 0 12px;
+            margin-bottom: 8px;
+
+            color: #a0a5ad;
+
+            font-size: 11px;
+            font-weight: 700;
+
+            letter-spacing: 0.08em;
+        }
+
+
+        .menu-link {
+            display: flex;
+            align-items: center;
+
+            padding: 11px 12px;
+            margin-bottom: 4px;
+
+            border-radius: 8px;
+
+            color: #5a6069;
+
+            text-decoration: none;
+
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+
+        .menu-link:hover {
+            background: #f3f5f7;
+            color: #20242a;
+        }
+
+
+        .menu-link.active {
+            background: #eef3ff;
+
+            color: #2457d6;
+            font-weight: 700;
+        }
+
+
+        .sidebar-bottom {
+            position: absolute;
+
+            left: 18px;
+            right: 18px;
+            bottom: 22px;
+        }
+
+
+        /* =========================
+           Main
+        ========================= */
+
+        .main {
+            margin-left: 240px;
+
+            min-height: 100vh;
+
+            padding: 40px 46px 60px;
+        }
+
+
+        .content {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+
+        .page-header {
+            display: flex;
+
+            align-items: center;
+            justify-content: space-between;
+
+            margin-bottom: 28px;
+        }
+
+
+        .page-title {
+            margin: 0;
+
+            font-size: 28px;
+            font-weight: 700;
+
+            letter-spacing: -0.6px;
+        }
+
+
+        .page-description {
+            margin-top: 6px;
+
+            color: #7b818a;
+
+            font-size: 14px;
+        }
+
+
+        .back-button {
+            padding: 8px 14px;
+
+            border: 1px solid #dfe2e6;
+            border-radius: 8px;
+
+            background: #ffffff;
+
+            color: #555b64;
+
+            text-decoration: none;
+
+            font-size: 13px;
+        }
+
+
+        .back-button:hover {
+            background: #f7f8fa;
+            color: #20242a;
+        }
+
+
+        /* =========================
+           Panel
+        ========================= */
+
+        .panel {
+            overflow: hidden;
+
+            background: #ffffff;
+
+            border: 1px solid #e6e8eb;
+            border-radius: 12px;
+        }
+
+
+        .panel-header {
+            padding: 20px 22px;
+
+            border-bottom: 1px solid #eceef0;
+        }
+
+
+        .panel-title {
+            margin: 0;
+
+            font-size: 17px;
+            font-weight: 700;
+        }
+
+
+        .panel-note {
+            margin-top: 4px;
+
+            color: #858b94;
+
+            font-size: 12px;
+        }
+
+
+        .panel-body {
+            padding: 24px 22px;
+        }
+
+
+        /* =========================
+           Current shift
+        ========================= */
+
+        .current-shift {
+            display: grid;
+
+            grid-template-columns:
+                repeat(3, 1fr);
+
+            gap: 18px;
+
+            margin-bottom: 24px;
+
+            padding: 16px 18px;
+
+            border: 1px solid #e6e8eb;
+            border-radius: 9px;
+
+            background: #fafbfc;
+        }
+
+
+        .current-label {
+            margin-bottom: 4px;
+
+            color: #858b94;
+
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+
+        .current-value {
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+
+        /* =========================
+           Form
+        ========================= */
+
+        .form-label {
+            margin-bottom: 7px;
+
+            color: #686e77;
+
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+
+        .form-control {
+            min-height: 42px;
+
+            border: 1px solid #dfe2e6;
+            border-radius: 8px;
+
+            font-size: 14px;
+        }
+
+
+        .form-control:focus {
+            border-color: #7f9fed;
+
+            box-shadow:
+                0 0 0 3px
+                rgba(36, 87, 214, 0.08);
+        }
+
+
+        /* =========================
+           Buttons
+        ========================= */
+
+        .primary-button {
+            padding: 9px 18px;
+
+            border: 0;
+            border-radius: 8px;
+
+            background: #2457d6;
+
+            color: #ffffff;
+
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+
+        .primary-button:hover {
+            background: #1f4dc0;
+        }
+
+
+        .cancel-button {
+            padding: 9px 18px;
+
+            border: 1px solid #dfe2e6;
+            border-radius: 8px;
+
+            background: #ffffff;
+
+            color: #555b64;
+
+            text-decoration: none;
+
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+
+        .cancel-button:hover {
+            background: #f7f8fa;
+
+            color: #20242a;
+        }
+
+
+        /* =========================
+           Message
+        ========================= */
+
+        .message {
+            margin-bottom: 20px;
+
+            padding: 14px 16px;
+
+            border: 1px solid #d7e1fb;
+            border-radius: 9px;
+
+            background: #f4f7ff;
+
+            color: #35599f;
+
+            font-size: 13px;
+        }
+
+
+        /* =========================
+           Responsive
+        ========================= */
+
+        @media (
+            max-width: 900px
+        ) {
+
+            .sidebar {
+                position: static;
+
+                width: 100%;
+                height: auto;
+
+                padding: 18px;
+
+                border-right: 0;
+                border-bottom: 1px solid #e8eaed;
+            }
+
+
+            .sidebar-bottom {
+                position: static;
+
+                margin-top: 12px;
+            }
+
+
+            .brand {
+                padding-bottom: 15px;
+            }
+
+
+            .main {
+                margin-left: 0;
+
+                padding: 24px 16px 40px;
+            }
+
+
+            .page-header {
+                display: block;
+            }
+
+
+            .back-button {
+                display: inline-block;
+
+                margin-top: 18px;
+            }
+
+
+            .current-shift {
+                grid-template-columns: 1fr;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+<!-- ==========================================
+     Sidebar
+========================================== -->
+
+<aside class="sidebar">
+
+
+    <div class="brand">
+
+        <div class="brand-title">
+            Shift Assist
+        </div>
+
+        <div class="brand-subtitle">
+            アルバイトシフト管理
+        </div>
+
+    </div>
+
+
+    <div class="menu-label">
+        MANAGEMENT
+    </div>
+
+
+    <a
+        href="/dashboard"
+        class="menu-link">
+
+        ダッシュボード
+
+    </a>
+
+
+    <a
+        href="/"
+        class="menu-link active">
+
+        シフト管理
+
+    </a>
+
+
+    <a
+        href="/weekly"
+        class="menu-link">
+
+        週間シフト
+
+    </a>
+
+
+    <a
+        href="/staff"
+        class="menu-link">
+
+        スタッフ管理
+
+    </a>
+
+
+    <a
+        href="/requirements"
+        class="menu-link">
+
+        必要人数設定
+
+    </a>
+
+
+    <a
+        href="/requests"
+        class="menu-link">
+
+        申請管理
+
+    </a>
+
+
+    <div class="sidebar-bottom">
+
+        <a
+            href="/logout"
+            class="menu-link">
+
+            ログアウト
+
+        </a>
+
+    </div>
+
+
+</aside>
+
+
+<!-- ==========================================
+     Main
+========================================== -->
+
+<main class="main">
+
+
+    <div class="content">
+
+
+        <!-- Header -->
+
+        <div class="page-header">
+
+
+            <div>
+
+                <h1 class="page-title">
+                    シフト編集
+                </h1>
+
+                <div class="page-description">
+
+                    登録済みシフトの勤務日・勤務時間を変更します。
+
+                </div>
+
+            </div>
+
+
+            <a
+                href="/"
+                class="back-button">
+
+                ← シフト管理へ戻る
+
+            </a>
+
+
+        </div>
+
+
+        <!-- Flash -->
+
+        {% with messages = get_flashed_messages() %}
+
+            {% if messages %}
+
+                {% for message in messages %}
+
+                    <div class="message">
+
+                        {{ message }}
+
+                    </div>
+
+                {% endfor %}
+
+            {% endif %}
+
+        {% endwith %}
+
+
+        <!-- Panel -->
+
+        <section class="panel">
+
+
+            <div class="panel-header">
+
+                <h2 class="panel-title">
+                    勤務内容を変更
+                </h2>
+
+                <div class="panel-note">
+
+                    変更後の内容を確認して保存してください。
+
+                </div>
+
+            </div>
+
+
+            <div class="panel-body">
+
+
+                <!-- Current -->
+
+                <div class="current-shift">
+
+
+                    <div>
+
+                        <div class="current-label">
+                            スタッフ
+                        </div>
+
+                        <div class="current-value">
+
+                            {{ emp.name }}
+
+                        </div>
+
+                    </div>
+
+
+                    <div>
+
+                        <div class="current-label">
+                            現在の日付
+                        </div>
+
+                        <div class="current-value">
+
+                            {{ emp.shift_date }}
+
+                        </div>
+
+                    </div>
+
+
+                    <div>
+
+                        <div class="current-label">
+                            現在の勤務時間
+                        </div>
+
+                        <div class="current-value">
+
+                            {{ emp.start_time }}
+                            ～
+                            {{ emp.end_time }}
+
+                        </div>
+
+                    </div>
+
+
+                </div>
+
+
+                <!-- Form -->
+
+                <form method="POST">
+
+
+                    <div class="mb-3">
+
+                        <label class="form-label">
+                            スタッフ名
+                        </label>
+
+
+                        <input
+                            type="text"
+                            name="name"
+                            class="form-control"
+                            value="{{ emp.name }}"
+                            required>
+
+                    </div>
+
+
+                    <div class="mb-3">
+
+                        <label class="form-label">
+                            日付
+                        </label>
+
+
+                        <input
+                            type="date"
+                            name="shift_date"
+                            class="form-control"
+                            value="{{ emp.shift_date }}"
+                            required>
+
+                    </div>
+
+
+                    <div class="row g-3 mb-4">
+
+
+                        <div class="col-md-6">
+
+                            <label class="form-label">
+                                開始時間
+                            </label>
+
+
+                            <input
+                                type="time"
+                                name="start_time"
+                                class="form-control"
+                                value="{{ emp.start_time }}"
+                                required>
+
+                        </div>
+
+
+                        <div class="col-md-6">
+
+                            <label class="form-label">
+                                終了時間
+                            </label>
+
+
+                            <input
+                                type="time"
+                                name="end_time"
+                                class="form-control"
+                                value="{{ emp.end_time }}"
+                                required>
+
+                        </div>
+
+
+                    </div>
+
+
+                    <div class="d-flex gap-2">
+
+
+                        <button
+                            type="submit"
+                            class="primary-button">
+
+                            変更を保存
+
+                        </button>
+
+
+                        <a
+                            href="/"
+                            class="cancel-button">
+
+                            キャンセル
+
+                        </a>
+
+
+                    </div>
+
+
+                </form>
+
+
+            </div>
+
+
+        </section>
+
+
+    </div>
+
+
+</main>
+
+
+</body>
+
+</html>

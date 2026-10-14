@@ -1,0 +1,21 @@
+# Python
+venv/
+.venv/
+__pycache__/
+*.pyc
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Environment / secrets
+.env
+
+# macOS
+.DS_Store
+
+# Backup files
+*_backup.*
+data.json
+data_backup.json

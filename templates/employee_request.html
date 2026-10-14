@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1">
+
+    <title>シフト変更申請</title>
+
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+        rel="stylesheet">
+
+    <style>
+
+        body {
+            background: #f5f6f8;
+        }
+
+        .page-container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .main-card {
+            border: 0;
+            border-radius: 16px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+<nav class="navbar bg-white shadow-sm">
+
+    <div class="container-fluid px-3">
+
+        <a
+            href="/employee"
+            class="btn btn-outline-secondary btn-sm">
+
+            ← 戻る
+
+        </a>
+
+        <span class="navbar-brand fw-bold mb-0">
+            シフト変更申請
+        </span>
+
+        <div></div>
+
+    </div>
+
+</nav>
+
+
+<div class="page-container px-3 py-4">
+
+
+    {% with messages = get_flashed_messages() %}
+
+        {% if messages %}
+
+            {% for message in messages %}
+
+                <div class="alert alert-danger">
+
+                    {{ message }}
+
+                </div>
+
+            {% endfor %}
+
+        {% endif %}
+
+    {% endwith %}
+
+
+    <div class="card main-card mb-4">
+
+        <div class="card-body p-4">
+
+            <div class="text-muted">
+                現在のシフト
+            </div>
+
+            <h4 class="fw-bold mt-2">
+                {{ shift.shift_date }}
+            </h4>
+
+            <h3 class="fw-bold">
+
+                {{ shift.start_time }}
+                ～
+                {{ shift.end_time }}
+
+            </h3>
+
+        </div>
+
+    </div>
+
+
+    <div class="card main-card">
+
+        <div class="card-body p-4">
+
+
+            <form method="POST">
+
+
+                <div class="mb-4">
+
+                    <label class="form-label fw-semibold">
+                        申請内容
+                    </label>
+
+
+                    <select
+                        name="request_type"
+                        id="request_type"
+                        class="form-select"
+                        required
+                        onchange="toggleTimeFields()">
+
+                        <option value="leave">
+                            休暇申請
+                        </option>
+
+                        <option value="change">
+                            勤務時間変更
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+                <div
+                    id="time_fields"
+                    style="display:none;">
+
+
+                    <div class="alert alert-light border">
+
+                        現在の勤務時間内で、
+                        短縮した時間を入力してください。
+
+                    </div>
+
+
+                    <div class="row g-3 mb-4">
+
+
+                        <div class="col-6">
+
+                            <label class="form-label">
+                                変更後の開始
+                            </label>
+
+                            <input
+                                type="time"
+                                name="requested_start_time"
+                                class="form-control">
+
+                        </div>
+
+
+                        <div class="col-6">
+
+                            <label class="form-label">
+                                変更後の終了
+                            </label>
+
+                            <input
+                                type="time"
+                                name="requested_end_time"
+                                class="form-control">
+
+                        </div>
+
+
+                    </div>
+
+
+                </div>
+
+
+                <div class="mb-4">
+
+                    <label class="form-label">
+                        理由
+                    </label>
+
+                    <textarea
+                        name="reason"
+                        class="form-control"
+                        rows="3"
+                        placeholder="例：大学の試験のため"></textarea>
+
+                </div>
+
+
+                <button
+                    type="submit"
+                    class="btn btn-primary btn-lg w-100">
+
+                    申請する
+
+                </button>
+
+
+            </form>
+
+
+        </div>
+
+    </div>
+
+
+</div>
+
+
+<script>
+
+function toggleTimeFields() {
+
+    const type =
+        document.getElementById(
+            "request_type"
+        ).value;
+
+    const fields =
+        document.getElementById(
+            "time_fields"
+        );
+
+    if (type === "change") {
+
+        fields.style.display =
+            "block";
+
+    } else {
+
+        fields.style.display =
+            "none";
+
+    }
+
+}
+
+toggleTimeFields();
+
+</script>
+
+
+</body>
+
+</html>

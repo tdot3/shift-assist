@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1">
+
+    <title>管理者ログイン</title>
+
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+        rel="stylesheet">
+
+    <style>
+
+        body {
+            background: #f5f6f8;
+        }
+
+        .login-wrapper {
+            min-height: 100vh;
+
+            display: flex;
+
+            justify-content: center;
+
+            align-items: center;
+        }
+
+        .login-card {
+            width: 100%;
+
+            max-width: 430px;
+
+            border: 0;
+
+            border-radius: 16px;
+
+            box-shadow:
+                0 4px 20px
+                rgba(0,0,0,0.08);
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+<div class="login-wrapper px-3">
+
+
+    <div class="card login-card">
+
+
+        <div class="card-body p-4 p-md-5">
+
+
+            <div class="text-center mb-4">
+
+
+                <h3 class="fw-bold">
+
+                    シフト管理システム
+
+                </h3>
+
+
+                <div class="text-muted">
+
+                    管理者ログイン
+
+                </div>
+
+
+            </div>
+
+
+            {% with messages = get_flashed_messages() %}
+
+                {% if messages %}
+
+                    {% for message in messages %}
+
+                        <div class="alert alert-danger">
+
+                            {{ message }}
+
+                        </div>
+
+                    {% endfor %}
+
+                {% endif %}
+
+            {% endwith %}
+
+
+            <form method="POST">
+
+
+                <div class="mb-3">
+
+
+                    <label class="form-label">
+
+                        ユーザー名
+
+                    </label>
+
+
+                    <input
+                        type="text"
+                        name="username"
+                        class="form-control"
+                        required>
+
+
+                </div>
+
+
+                <div class="mb-4">
+
+
+                    <label class="form-label">
+
+                        パスワード
+
+                    </label>
+
+
+                    <input
+                        type="password"
+                        name="password"
+                        class="form-control"
+                        required>
+
+
+                </div>
+
+
+                <button
+                    type="submit"
+                    class="btn btn-primary w-100">
+
+                    管理者としてログイン
+
+                </button>
+
+
+            </form>
+
+
+            <hr class="my-4">
+
+
+            <div class="text-center">
+
+
+                <div class="text-muted mb-2">
+
+                    スタッフの方はこちら
+
+                </div>
+
+
+                <a
+                    href="/employee/login"
+                    class="btn btn-outline-secondary w-100">
+
+                    スタッフログイン
+
+                </a>
+
+
+            </div>
+
+
+        </div>
+
+
+    </div>
+
+
+</div>
+
+
+</body>
+
+</html>

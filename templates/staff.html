@@ -1,0 +1,993 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1">
+
+    <title>Shift Assist | スタッフ管理</title>
+
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+        rel="stylesheet">
+
+    <style>
+
+        body {
+            margin: 0;
+            background: #f6f7f9;
+            color: #20242a;
+
+            font-family:
+                -apple-system,
+                BlinkMacSystemFont,
+                "Hiragino Kaku Gothic ProN",
+                "Yu Gothic",
+                sans-serif;
+        }
+
+
+        /* =========================
+           Sidebar
+        ========================= */
+
+        .sidebar {
+            position: fixed;
+
+            left: 0;
+            top: 0;
+            bottom: 0;
+
+            width: 240px;
+
+            background: #ffffff;
+
+            border-right: 1px solid #e8eaed;
+
+            padding: 28px 18px;
+
+            z-index: 1000;
+        }
+
+
+        .brand {
+            padding: 0 12px 28px;
+        }
+
+
+        .brand-title {
+            font-size: 22px;
+            font-weight: 700;
+
+            letter-spacing: -0.5px;
+        }
+
+
+        .brand-subtitle {
+            margin-top: 3px;
+
+            font-size: 12px;
+            color: #8a9099;
+        }
+
+
+        .menu-label {
+            padding: 0 12px;
+            margin-bottom: 8px;
+
+            font-size: 11px;
+            font-weight: 700;
+
+            color: #a0a5ad;
+
+            letter-spacing: 0.08em;
+        }
+
+
+        .menu-link {
+            display: flex;
+            align-items: center;
+
+            padding: 11px 12px;
+            margin-bottom: 4px;
+
+            border-radius: 8px;
+
+            color: #5a6069;
+            text-decoration: none;
+
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+
+        .menu-link:hover {
+            background: #f3f5f7;
+            color: #20242a;
+        }
+
+
+        .menu-link.active {
+            background: #eef3ff;
+
+            color: #2457d6;
+            font-weight: 700;
+        }
+
+
+        .sidebar-bottom {
+            position: absolute;
+
+            left: 18px;
+            right: 18px;
+            bottom: 22px;
+        }
+
+
+        /* =========================
+           Main
+        ========================= */
+
+        .main {
+            margin-left: 240px;
+
+            min-height: 100vh;
+
+            padding: 40px 46px 60px;
+        }
+
+
+        .content {
+            max-width: 1180px;
+            margin: 0 auto;
+        }
+
+
+        .page-header {
+            margin-bottom: 28px;
+        }
+
+
+        .page-title {
+            margin: 0;
+
+            font-size: 28px;
+            font-weight: 700;
+
+            letter-spacing: -0.6px;
+        }
+
+
+        .page-description {
+            margin-top: 6px;
+
+            color: #7b818a;
+
+            font-size: 14px;
+        }
+
+
+        /* =========================
+           Panel
+        ========================= */
+
+        .panel {
+            margin-bottom: 24px;
+
+            overflow: hidden;
+
+            background: #ffffff;
+
+            border: 1px solid #e6e8eb;
+            border-radius: 12px;
+        }
+
+
+        .panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+
+            padding: 20px 22px;
+
+            border-bottom: 1px solid #eceef0;
+        }
+
+
+        .panel-title {
+            margin: 0;
+
+            font-size: 17px;
+            font-weight: 700;
+        }
+
+
+        .panel-note {
+            margin-top: 4px;
+
+            color: #858b94;
+
+            font-size: 12px;
+        }
+
+
+        .panel-body {
+            padding: 22px;
+        }
+
+
+        /* =========================
+           Form
+        ========================= */
+
+        .form-label {
+            margin-bottom: 7px;
+
+            color: #686e77;
+
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+
+        .form-control {
+            min-height: 42px;
+
+            border: 1px solid #dfe2e6;
+            border-radius: 8px;
+
+            font-size: 14px;
+        }
+
+
+        .form-control:focus {
+            border-color: #7f9fed;
+
+            box-shadow:
+                0 0 0 3px
+                rgba(36, 87, 214, 0.08);
+        }
+
+
+        .primary-button {
+            min-height: 42px;
+
+            padding: 9px 18px;
+
+            border: 0;
+            border-radius: 8px;
+
+            background: #2457d6;
+
+            color: #ffffff;
+
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+
+        .primary-button:hover {
+            background: #1f4dc0;
+        }
+
+
+        /* =========================
+           Message
+        ========================= */
+
+        .message {
+            margin-bottom: 20px;
+
+            padding: 14px 16px;
+
+            border: 1px solid #d7e1fb;
+            border-radius: 9px;
+
+            background: #f4f7ff;
+
+            color: #35599f;
+
+            font-size: 13px;
+        }
+
+
+        /* =========================
+           Staff table
+        ========================= */
+
+        .custom-table {
+            width: 100%;
+            margin: 0;
+
+            border-collapse: collapse;
+        }
+
+
+        .custom-table th {
+            padding: 13px 20px;
+
+            background: #fafbfc;
+
+            border-bottom: 1px solid #eceef0;
+
+            color: #747a83;
+
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+
+        .custom-table td {
+            padding: 17px 20px;
+
+            border-bottom: 1px solid #f0f1f2;
+
+            font-size: 14px;
+            vertical-align: middle;
+        }
+
+
+        .custom-table tr:last-child td {
+            border-bottom: 0;
+        }
+
+
+        .staff-name {
+            font-weight: 700;
+        }
+
+
+        .staff-id {
+            margin-top: 3px;
+
+            color: #9a9fa7;
+
+            font-size: 11px;
+        }
+
+
+        .count-number {
+            font-weight: 700;
+        }
+
+
+        .count-unit {
+            color: #858b94;
+
+            font-size: 12px;
+        }
+
+
+        /* =========================
+           Status
+        ========================= */
+
+        .registered-status {
+            display: inline-block;
+
+            padding: 5px 9px;
+
+            border-radius: 6px;
+
+            background: #edf8f2;
+
+            color: #218553;
+
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+
+        .empty-status {
+            display: inline-block;
+
+            padding: 5px 9px;
+
+            border-radius: 6px;
+
+            background: #f2f3f5;
+
+            color: #7a8089;
+
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+
+        /* =========================
+           Actions
+        ========================= */
+
+        .availability-link {
+            display: inline-block;
+
+            padding: 7px 11px;
+
+            border: 1px solid #bdd0f8;
+            border-radius: 7px;
+
+            background: #ffffff;
+
+            color: #2457d6;
+
+            text-decoration: none;
+
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+
+        .availability-link:hover {
+            background: #f5f8ff;
+        }
+
+
+        .delete-link {
+            display: inline-block;
+
+            padding: 7px 11px;
+
+            border: 1px solid #e3a5a9;
+            border-radius: 7px;
+
+            color: #c63a42;
+
+            text-decoration: none;
+
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+
+        .delete-link:hover {
+            background: #fff5f5;
+        }
+
+
+        .empty-state {
+            padding: 42px;
+
+            color: #858b94;
+
+            text-align: center;
+
+            font-size: 14px;
+        }
+
+
+        /* =========================
+           Info
+        ========================= */
+
+        .info-box {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+
+            margin-top: 18px;
+
+            padding: 15px 17px;
+
+            border: 1px solid #e6e8eb;
+            border-radius: 9px;
+
+            background: #fafbfc;
+
+            color: #686e77;
+
+            font-size: 12px;
+        }
+
+
+        .pin {
+            color: #343940;
+
+            font-weight: 700;
+        }
+
+
+        /* =========================
+           Responsive
+        ========================= */
+
+        @media (
+            max-width: 900px
+        ) {
+
+            .sidebar {
+                position: static;
+
+                width: 100%;
+                height: auto;
+
+                padding: 18px;
+
+                border-right: 0;
+                border-bottom:
+                    1px solid #e8eaed;
+            }
+
+
+            .sidebar-bottom {
+                position: static;
+
+                margin-top: 12px;
+            }
+
+
+            .brand {
+                padding-bottom: 15px;
+            }
+
+
+            .main {
+                margin-left: 0;
+
+                padding: 24px 16px 40px;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+<!-- ==========================================
+     Sidebar
+========================================== -->
+
+<aside class="sidebar">
+
+
+    <div class="brand">
+
+        <div class="brand-title">
+            Shift Assist
+        </div>
+
+        <div class="brand-subtitle">
+            アルバイトシフト管理
+        </div>
+
+    </div>
+
+
+    <div class="menu-label">
+        MANAGEMENT
+    </div>
+
+
+    <a
+        href="/dashboard"
+        class="menu-link">
+
+        ダッシュボード
+
+    </a>
+
+
+    <a
+        href="/"
+        class="menu-link">
+
+        シフト管理
+
+    </a>
+
+
+    <a
+        href="/weekly"
+        class="menu-link">
+
+        週間シフト
+
+    </a>
+
+
+    <a
+        href="/staff"
+        class="menu-link active">
+
+        スタッフ管理
+
+    </a>
+
+
+    <a
+        href="/requirements"
+        class="menu-link">
+
+        必要人数設定
+
+    </a>
+
+
+    <a
+        href="/requests"
+        class="menu-link">
+
+        申請管理
+
+    </a>
+
+
+    <div class="sidebar-bottom">
+
+        <a
+            href="/logout"
+            class="menu-link">
+
+            ログアウト
+
+        </a>
+
+    </div>
+
+
+</aside>
+
+
+<!-- ==========================================
+     Main
+========================================== -->
+
+<main class="main">
+
+
+    <div class="content">
+
+
+        <!-- Header -->
+
+        <div class="page-header">
+
+            <h1 class="page-title">
+                スタッフ管理
+            </h1>
+
+            <div class="page-description">
+
+                スタッフの登録と、
+                勤務可能時間・希望休を管理します。
+
+            </div>
+
+        </div>
+
+
+        <!-- Flash -->
+
+        {% with messages = get_flashed_messages() %}
+
+            {% if messages %}
+
+                {% for message in messages %}
+
+                    <div class="message">
+
+                        {{ message }}
+
+                    </div>
+
+                {% endfor %}
+
+            {% endif %}
+
+        {% endwith %}
+
+
+        <!-- ==================================
+             Add staff
+        =================================== -->
+
+        <section class="panel">
+
+
+            <div class="panel-header">
+
+                <div>
+
+                    <h2 class="panel-title">
+                        スタッフ登録
+                    </h2>
+
+                    <div class="panel-note">
+
+                        新しいスタッフをシステムに登録します。
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div class="panel-body">
+
+
+                <form
+                    method="POST"
+                    class="row g-3 align-items-end">
+
+
+                    <div class="col-md-8">
+
+                        <label class="form-label">
+                            スタッフ名
+                        </label>
+
+
+                        <input
+                            type="text"
+                            name="name"
+                            class="form-control"
+                            placeholder="例：高橋"
+                            required>
+
+                    </div>
+
+
+                    <div class="col-md-4">
+
+                        <button
+                            type="submit"
+                            class="primary-button w-100">
+
+                            スタッフを追加
+
+                        </button>
+
+                    </div>
+
+
+                </form>
+
+
+                <div class="info-box">
+
+                    <span>
+                        登録されたスタッフは、
+                        スタッフ専用画面からログインできます。
+                    </span>
+
+                    <span>
+                        初期PIN：
+                        <span class="pin">
+                            1234
+                        </span>
+                    </span>
+
+                </div>
+
+
+            </div>
+
+
+        </section>
+
+
+        <!-- ==================================
+             Staff list
+        =================================== -->
+
+        <section class="panel">
+
+
+            <div class="panel-header">
+
+                <div>
+
+                    <h2 class="panel-title">
+                        登録スタッフ
+                    </h2>
+
+                    <div class="panel-note">
+
+                        勤務希望の登録状況と、
+                        現在のシフト数を確認できます。
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            {% if staff_list %}
+
+
+                <div class="table-responsive">
+
+
+                    <table class="custom-table">
+
+
+                        <thead>
+
+                            <tr>
+
+                                <th>
+                                    スタッフ
+                                </th>
+
+                                <th>
+                                    登録シフト
+                                </th>
+
+                                <th>
+                                    勤務希望
+                                </th>
+
+                                <th>
+                                    希望登録状況
+                                </th>
+
+                                <th>
+                                    操作
+                                </th>
+
+                            </tr>
+
+                        </thead>
+
+
+                        <tbody>
+
+
+                            {% for staff in staff_list %}
+
+
+                                <tr>
+
+
+                                    <td>
+
+                                        <div class="staff-name">
+
+                                            {{ staff.name }}
+
+                                        </div>
+
+                                        <div class="staff-id">
+
+                                            STAFF ID
+                                            {{ staff.id }}
+
+                                        </div>
+
+                                    </td>
+
+
+                                    <td>
+
+                                        <span class="count-number">
+
+                                            {{ staff.shift_count }}
+
+                                        </span>
+
+                                        <span class="count-unit">
+                                            件
+                                        </span>
+
+                                    </td>
+
+
+                                    <td>
+
+                                        <span class="count-number">
+
+                                            {{ staff.availability_count }}
+
+                                        </span>
+
+                                        <span class="count-unit">
+                                            日
+                                        </span>
+
+                                    </td>
+
+
+                                    <td>
+
+
+                                        {% if staff.availability_count > 0 %}
+
+                                            <span class="registered-status">
+
+                                                登録あり
+
+                                            </span>
+
+                                        {% else %}
+
+                                            <span class="empty-status">
+
+                                                未登録
+
+                                            </span>
+
+                                        {% endif %}
+
+
+                                    </td>
+
+
+                                    <td>
+
+
+                                        <div class="d-flex gap-2">
+
+
+                                            <a
+                                                href="/availability/{{ staff.id }}"
+                                                class="availability-link">
+
+                                                勤務希望を設定
+
+                                            </a>
+
+
+                                            <a
+                                                href="/staff/delete/{{ staff.id }}"
+                                                class="delete-link">
+
+                                                削除
+
+                                            </a>
+
+
+                                        </div>
+
+
+                                    </td>
+
+
+                                </tr>
+
+
+                            {% endfor %}
+
+
+                        </tbody>
+
+
+                    </table>
+
+
+                </div>
+
+
+            {% else %}
+
+
+                <div class="empty-state">
+
+                    スタッフはまだ登録されていません。
+
+                </div>
+
+
+            {% endif %}
+
+
+        </section>
+
+
+    </div>
+
+
+</main>
+
+
+</body>
+
+</html>

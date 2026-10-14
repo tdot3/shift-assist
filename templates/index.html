@@ -1,0 +1,1061 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1">
+
+    <title>Shift Assist | シフト管理</title>
+
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+        rel="stylesheet">
+
+    <style>
+
+        body {
+            margin: 0;
+            background: #f6f7f9;
+            color: #20242a;
+            font-family:
+                -apple-system,
+                BlinkMacSystemFont,
+                "Hiragino Kaku Gothic ProN",
+                "Yu Gothic",
+                sans-serif;
+        }
+
+
+        /* =========================
+           Sidebar
+        ========================= */
+
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            bottom: 0;
+
+            width: 240px;
+
+            background: #ffffff;
+
+            border-right: 1px solid #e8eaed;
+
+            padding: 28px 18px;
+
+            z-index: 1000;
+        }
+
+
+        .brand {
+            padding: 0 12px 28px 12px;
+        }
+
+
+        .brand-title {
+            font-size: 22px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+
+        .brand-subtitle {
+            margin-top: 3px;
+
+            font-size: 12px;
+            color: #8a9099;
+        }
+
+
+        .menu-label {
+            padding: 0 12px;
+            margin-bottom: 8px;
+
+            font-size: 11px;
+            font-weight: 700;
+
+            color: #a0a5ad;
+
+            letter-spacing: 0.08em;
+        }
+
+
+        .menu-link {
+            display: flex;
+            align-items: center;
+
+            padding: 11px 12px;
+            margin-bottom: 4px;
+
+            border-radius: 8px;
+
+            text-decoration: none;
+
+            color: #5a6069;
+
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+
+        .menu-link:hover {
+            background: #f3f5f7;
+            color: #20242a;
+        }
+
+
+        .menu-link.active {
+            background: #eef3ff;
+            color: #2457d6;
+            font-weight: 700;
+        }
+
+
+        .sidebar-bottom {
+            position: absolute;
+
+            left: 18px;
+            right: 18px;
+            bottom: 22px;
+        }
+
+
+        /* =========================
+           Main
+        ========================= */
+
+        .main {
+            margin-left: 240px;
+
+            min-height: 100vh;
+
+            padding: 40px 46px 60px;
+        }
+
+
+        .content {
+            max-width: 1180px;
+            margin: 0 auto;
+        }
+
+
+        .page-header {
+            margin-bottom: 28px;
+        }
+
+
+        .page-title {
+            margin: 0;
+
+            font-size: 28px;
+            font-weight: 700;
+
+            letter-spacing: -0.6px;
+        }
+
+
+        .page-description {
+            margin-top: 6px;
+
+            color: #7b818a;
+            font-size: 14px;
+        }
+
+
+        /* =========================
+           Panel
+        ========================= */
+
+        .panel {
+            background: #ffffff;
+
+            border: 1px solid #e6e8eb;
+            border-radius: 12px;
+
+            margin-bottom: 24px;
+
+            overflow: hidden;
+        }
+
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+
+            padding: 20px 22px;
+
+            border-bottom: 1px solid #eceef0;
+        }
+
+
+        .panel-title {
+            margin: 0;
+
+            font-size: 17px;
+            font-weight: 700;
+        }
+
+
+        .panel-note {
+            margin-top: 4px;
+
+            font-size: 12px;
+            color: #858b94;
+        }
+
+
+        .panel-body {
+            padding: 22px;
+        }
+
+
+        /* =========================
+           Buttons
+        ========================= */
+
+        .primary-button {
+            padding: 9px 16px;
+
+            border: 0;
+            border-radius: 8px;
+
+            background: #2457d6;
+
+            color: #ffffff;
+
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+
+        .primary-button:hover {
+            background: #1f4dc0;
+        }
+
+
+        .success-button {
+            padding: 9px 16px;
+
+            border: 0;
+            border-radius: 8px;
+
+            background: #218553;
+
+            color: #ffffff;
+
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+
+        .success-button:hover {
+            background: #1b7448;
+        }
+
+
+        .danger-outline-button {
+            padding: 8px 15px;
+
+            border: 1px solid #e0a6a9;
+            border-radius: 8px;
+
+            background: #ffffff;
+
+            color: #c63a42;
+
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+
+        .danger-outline-button:hover {
+            background: #fff5f5;
+        }
+
+
+        /* =========================
+           Form
+        ========================= */
+
+        .form-label {
+            margin-bottom: 7px;
+
+            font-size: 12px;
+            font-weight: 600;
+
+            color: #686e77;
+        }
+
+
+        .form-control,
+        .form-select {
+            border: 1px solid #dfe2e6;
+            border-radius: 8px;
+
+            min-height: 42px;
+
+            font-size: 14px;
+        }
+
+
+        .form-control:focus,
+        .form-select:focus {
+            border-color: #7f9fed;
+            box-shadow: 0 0 0 3px rgba(36,87,214,0.08);
+        }
+
+
+        /* =========================
+           Alerts
+        ========================= */
+
+        .message {
+            padding: 14px 16px;
+
+            margin-bottom: 20px;
+
+            border: 1px solid #d7e1fb;
+            border-radius: 9px;
+
+            background: #f4f7ff;
+
+            color: #35599f;
+
+            font-size: 13px;
+        }
+
+
+        /* =========================
+           Table
+        ========================= */
+
+        .custom-table {
+            width: 100%;
+            margin: 0;
+
+            border-collapse: collapse;
+        }
+
+
+        .custom-table th {
+            padding: 13px 20px;
+
+            background: #fafbfc;
+
+            border-bottom: 1px solid #eceef0;
+
+            color: #747a83;
+
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+
+        .custom-table td {
+            padding: 15px 20px;
+
+            border-bottom: 1px solid #f0f1f2;
+
+            font-size: 14px;
+            vertical-align: middle;
+        }
+
+
+        .custom-table tr:last-child td {
+            border-bottom: 0;
+        }
+
+
+        .status-auto {
+            display: inline-block;
+
+            padding: 4px 8px;
+
+            border-radius: 5px;
+
+            background: #edf8f2;
+
+            color: #218553;
+
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+
+        .status-manual {
+            display: inline-block;
+
+            padding: 4px 8px;
+
+            border-radius: 5px;
+
+            background: #f0f1f3;
+
+            color: #686e77;
+
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+
+        .edit-link {
+            padding: 6px 10px;
+
+            border: 1px solid #e4c57b;
+            border-radius: 7px;
+
+            text-decoration: none;
+
+            color: #9b6c00;
+
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+
+        .delete-link {
+            padding: 6px 10px;
+
+            border: 1px solid #e3a5a9;
+            border-radius: 7px;
+
+            text-decoration: none;
+
+            color: #c63a42;
+
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+
+        .empty-state {
+            padding: 42px;
+
+            text-align: center;
+
+            color: #858b94;
+
+            font-size: 14px;
+        }
+
+
+        /* =========================
+           Responsive
+        ========================= */
+
+        @media (
+            max-width: 900px
+        ) {
+
+            .sidebar {
+                position: static;
+
+                width: 100%;
+                height: auto;
+
+                padding: 18px;
+
+                border-right: 0;
+                border-bottom: 1px solid #e8eaed;
+            }
+
+
+            .sidebar-bottom {
+                position: static;
+
+                margin-top: 12px;
+            }
+
+
+            .brand {
+                padding-bottom: 15px;
+            }
+
+
+            .main {
+                margin-left: 0;
+
+                padding: 24px 16px 40px;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+<!-- ==========================================
+     Sidebar
+========================================== -->
+
+<aside class="sidebar">
+
+
+    <div class="brand">
+
+        <div class="brand-title">
+            Shift Assist
+        </div>
+
+        <div class="brand-subtitle">
+            アルバイトシフト管理
+        </div>
+
+    </div>
+
+
+    <div class="menu-label">
+        MANAGEMENT
+    </div>
+
+
+    <a
+        href="/dashboard"
+        class="menu-link">
+
+        ダッシュボード
+
+    </a>
+
+
+    <a
+        href="/"
+        class="menu-link active">
+
+        シフト管理
+
+    </a>
+
+
+    <a
+        href="/weekly"
+        class="menu-link">
+
+        週間シフト
+
+    </a>
+
+
+    <a
+        href="/staff"
+        class="menu-link">
+
+        スタッフ管理
+
+    </a>
+
+
+    <a
+        href="/requirements"
+        class="menu-link">
+
+        必要人数設定
+
+    </a>
+
+
+    <a
+        href="/requests"
+        class="menu-link">
+
+        申請管理
+
+    </a>
+
+
+    <div class="sidebar-bottom">
+
+        <a
+            href="/logout"
+            class="menu-link">
+
+            ログアウト
+
+        </a>
+
+    </div>
+
+
+</aside>
+
+
+<!-- ==========================================
+     Main
+========================================== -->
+
+<main class="main">
+
+
+    <div class="content">
+
+
+        <!-- Header -->
+
+        <div class="page-header">
+
+            <h1 class="page-title">
+                シフト管理
+            </h1>
+
+            <div class="page-description">
+
+                自動シフト作成と、
+                管理者による個別調整を行います。
+
+            </div>
+
+        </div>
+
+
+        <!-- Flash -->
+
+        {% with messages = get_flashed_messages() %}
+
+            {% if messages %}
+
+                {% for message in messages %}
+
+                    <div class="message">
+
+                        {{ message }}
+
+                    </div>
+
+                {% endfor %}
+
+            {% endif %}
+
+        {% endwith %}
+
+
+        <!-- ==================================
+             自动排班
+        =================================== -->
+
+        <section class="panel">
+
+
+            <div class="panel-header">
+
+
+                <div>
+
+                    <h2 class="panel-title">
+                        自動シフト作成
+                    </h2>
+
+                    <div class="panel-note">
+
+                        勤務希望・希望休・必要人数をもとに、
+                        条件に合うスタッフを配置します。
+
+                    </div>
+
+                </div>
+
+
+                <div class="d-flex gap-2">
+
+
+                    <form
+                        method="POST"
+                        action="/auto-generate">
+
+                        <button
+                            type="submit"
+                            class="success-button">
+
+                            自動シフト作成
+
+                        </button>
+
+                    </form>
+
+
+                    <form
+                        method="POST"
+                        action="/auto-clear">
+
+                        <button
+                            type="submit"
+                            class="danger-outline-button">
+
+                            自動作成分をクリア
+
+                        </button>
+
+                    </form>
+
+
+                </div>
+
+
+            </div>
+
+
+        </section>
+
+
+        <!-- ==================================
+             手动排班
+        =================================== -->
+
+        <section class="panel">
+
+
+            <div class="panel-header">
+
+
+                <div>
+
+                    <h2 class="panel-title">
+                        手動シフト追加
+                    </h2>
+
+                    <div class="panel-note">
+
+                        必要に応じて、
+                        管理者が個別に勤務を追加できます。
+
+                    </div>
+
+                </div>
+
+
+            </div>
+
+
+            <div class="panel-body">
+
+
+                <form
+                    method="POST"
+                    class="row g-3">
+
+
+                    <div class="col-lg-3 col-md-6">
+
+                        <label class="form-label">
+                            スタッフ
+                        </label>
+
+
+                        <select
+                            name="employee_id"
+                            class="form-select"
+                            required>
+
+
+                            <option value="">
+                                選択してください
+                            </option>
+
+
+                            {% for staff in staff_list %}
+
+                                <option value="{{ staff.id }}">
+
+                                    {{ staff.name }}
+
+                                </option>
+
+                            {% endfor %}
+
+
+                        </select>
+
+                    </div>
+
+
+                    <div class="col-lg-3 col-md-6">
+
+                        <label class="form-label">
+                            日付
+                        </label>
+
+
+                        <input
+                            type="date"
+                            name="shift_date"
+                            class="form-control"
+                            required>
+
+                    </div>
+
+
+                    <div class="col-lg-2 col-md-4">
+
+                        <label class="form-label">
+                            開始
+                        </label>
+
+
+                        <input
+                            type="time"
+                            name="start_time"
+                            class="form-control"
+                            required>
+
+                    </div>
+
+
+                    <div class="col-lg-2 col-md-4">
+
+                        <label class="form-label">
+                            終了
+                        </label>
+
+
+                        <input
+                            type="time"
+                            name="end_time"
+                            class="form-control"
+                            required>
+
+                    </div>
+
+
+                    <div
+                        class="
+                            col-lg-2
+                            col-md-4
+                            d-flex
+                            align-items-end
+                        ">
+
+
+                        <button
+                            type="submit"
+                            class="primary-button w-100">
+
+                            追加
+
+                        </button>
+
+
+                    </div>
+
+
+                </form>
+
+
+            </div>
+
+
+        </section>
+
+
+        <!-- ==================================
+             Shift list
+        =================================== -->
+
+        <section class="panel">
+
+
+            <div class="panel-header">
+
+
+                <div>
+
+                    <h2 class="panel-title">
+                        登録済みシフト
+                    </h2>
+
+                    <div class="panel-note">
+
+                        自動作成・手動登録された勤務を確認できます。
+
+                    </div>
+
+                </div>
+
+
+                <a
+                    href="/weekly"
+                    class="edit-link">
+
+                    週間表示を見る
+
+                </a>
+
+
+            </div>
+
+
+            {% if employees %}
+
+
+                <div class="table-responsive">
+
+
+                    <table class="custom-table">
+
+
+                        <thead>
+
+                            <tr>
+
+                                <th>
+                                    スタッフ
+                                </th>
+
+                                <th>
+                                    日付
+                                </th>
+
+                                <th>
+                                    勤務時間
+                                </th>
+
+                                <th>
+                                    作成方法
+                                </th>
+
+                                <th>
+                                    操作
+                                </th>
+
+                            </tr>
+
+                        </thead>
+
+
+                        <tbody>
+
+
+                            {% for emp in employees %}
+
+
+                                <tr>
+
+
+                                    <td>
+
+                                        <strong>
+                                            {{ emp.name }}
+                                        </strong>
+
+                                    </td>
+
+
+                                    <td>
+
+                                        {{ emp.shift_date }}
+
+                                    </td>
+
+
+                                    <td>
+
+                                        {{ emp.start_time }}
+                                        ～
+                                        {{ emp.end_time }}
+
+                                    </td>
+
+
+                                    <td>
+
+
+                                        {% if emp.source == "auto" %}
+
+                                            <span class="status-auto">
+
+                                                自動
+
+                                            </span>
+
+                                        {% else %}
+
+                                            <span class="status-manual">
+
+                                                手動
+
+                                            </span>
+
+                                        {% endif %}
+
+
+                                    </td>
+
+
+                                    <td>
+
+
+                                        <div class="d-flex gap-2">
+
+
+                                            <a
+                                                href="/edit/{{ emp.id }}"
+                                                class="edit-link">
+
+                                                編集
+
+                                            </a>
+
+
+                                            <a
+                                                href="/delete/{{ emp.id }}"
+                                                class="delete-link">
+
+                                                削除
+
+                                            </a>
+
+
+                                        </div>
+
+
+                                    </td>
+
+
+                                </tr>
+
+
+                            {% endfor %}
+
+
+                        </tbody>
+
+
+                    </table>
+
+
+                </div>
+
+
+            {% else %}
+
+
+                <div class="empty-state">
+
+                    シフトはまだ登録されていません。
+
+                </div>
+
+
+            {% endif %}
+
+
+        </section>
+
+
+    </div>
+
+
+</main>
+
+
+</body>
+
+</html>

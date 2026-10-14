@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1">
+
+    <title>マイシフト</title>
+
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+        rel="stylesheet">
+
+    <style>
+
+        body {
+            background: #f5f6f8;
+        }
+
+        .page-container {
+            max-width: 720px;
+            margin: 0 auto;
+        }
+
+        .main-card {
+            border: 0;
+            border-radius: 16px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+        }
+
+        .shift-card {
+            border: 0;
+            border-radius: 14px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .shift-date {
+            font-size: 17px;
+            font-weight: 700;
+        }
+
+        .shift-time {
+            font-size: 23px;
+            font-weight: 700;
+        }
+
+        .section-title {
+            font-weight: 700;
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+<nav class="navbar bg-white shadow-sm">
+
+    <div class="container-fluid px-3">
+
+        <span class="navbar-brand fw-bold">
+            マイシフト
+        </span>
+
+        <a
+            href="/employee/logout"
+            class="btn btn-sm btn-outline-danger">
+
+            ログアウト
+
+        </a>
+
+    </div>
+
+</nav>
+
+
+<div class="page-container px-3 py-4">
+
+
+    {% with messages = get_flashed_messages() %}
+
+        {% if messages %}
+
+            {% for message in messages %}
+
+                <div class="alert alert-info">
+
+                    {{ message }}
+
+                </div>
+
+            {% endfor %}
+
+        {% endif %}
+
+    {% endwith %}
+
+
+    <div class="card main-card mb-4">
+
+        <div class="card-body p-4">
+
+            <div class="text-muted mb-1">
+                ログイン中
+            </div>
+
+            <h3 class="fw-bold mb-1">
+                {{ staff.name }} さん
+            </h3>
+
+            <div class="text-muted">
+                スタッフID：{{ staff.id }}
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- 今後のシフト -->
+
+    <div class="mb-4">
+
+        <h5 class="section-title mb-2">
+            今後30日間のシフト
+        </h5>
+
+        <div class="text-muted small mb-3">
+
+            {{ today }}
+            ～
+            {{ display_end }}
+
+        </div>
+
+
+        {% if shifts %}
+
+
+            {% for shift in shifts %}
+
+
+                <div class="card shift-card mb-3">
+
+                    <div class="card-body p-4">
+
+
+                        <div
+                            class="
+                                d-flex
+                                justify-content-between
+                                align-items-start
+                            ">
+
+
+                            <div>
+
+                                <div class="shift-date">
+                                    {{ shift.shift_date }}
+                                </div>
+
+                                <div class="shift-time mt-2">
+
+                                    {{ shift.start_time }}
+                                    ～
+                                    {{ shift.end_time }}
+
+                                </div>
+
+                            </div>
+
+
+                            {% if shift.source == "auto" %}
+
+                                <span class="badge bg-success">
+                                    自動作成
+                                </span>
+
+                            {% else %}
+
+                                <span class="badge bg-secondary">
+                                    手動登録
+                                </span>
+
+                            {% endif %}
+
+
+                        </div>
+
+
+                        <div class="mt-3">
+
+
+                            {% if shift.pending_request_id %}
+
+                                <button
+                                    class="btn btn-warning w-100"
+                                    disabled>
+
+                                    申請確認待ち
+
+                                </button>
+
+                            {% else %}
+
+                                <a
+                                    href="/employee/request/{{ shift.id }}"
+                                    class="btn btn-outline-primary w-100">
+
+                                    休暇・勤務時間変更を申請
+
+                                </a>
+
+                            {% endif %}
+
+
+                        </div>
+
+
+                    </div>
+
+                </div>
+
+
+            {% endfor %}
+
+
+        {% else %}
+
+
+            <div class="card main-card">
+
+                <div class="card-body text-center text-muted py-5">
+
+                    今後30日間のシフトはありません。
+
+                </div>
+
+            </div>
+
+
+        {% endif %}
+
+
+    </div>
+
+
+    <!-- 申请历史 -->
+
+    <div class="mb-4">
+
+        <h5 class="section-title mb-3">
+            申請状況
+        </h5>
+
+
+        <div class="card main-card">
+
+            <div class="card-body p-0">
+
+
+                {% if request_history %}
+
+
+                    <div class="list-group list-group-flush">
+
+
+                        {% for item in request_history %}
+
+
+                            <div class="list-group-item px-4 py-3">
+
+
+                                <div
+                                    class="
+                                        d-flex
+                                        justify-content-between
+                                        align-items-start
+                                    ">
+
+
+                                    <div>
+
+
+                                        <div class="fw-semibold">
+
+                                            {{ item.shift_date }}
+
+                                        </div>
+
+
+                                        <div class="small text-muted">
+
+                                            {{ item.original_start_time }}
+                                            ～
+                                            {{ item.original_end_time }}
+
+                                        </div>
+
+
+                                        {% if item.request_type == "leave" %}
+
+                                            <div class="mt-1">
+                                                休暇申請
+                                            </div>
+
+                                        {% else %}
+
+                                            <div class="mt-1">
+
+                                                勤務時間変更：
+
+                                                {{ item.requested_start_time }}
+                                                ～
+                                                {{ item.requested_end_time }}
+
+                                            </div>
+
+                                        {% endif %}
+
+
+                                    </div>
+
+
+                                    <div>
+
+
+                                        {% if item.status == "pending" %}
+
+                                            <span class="badge bg-warning text-dark">
+                                                確認待ち
+                                            </span>
+
+                                        {% elif item.status == "approved" %}
+
+                                            <span class="badge bg-success">
+                                                承認
+                                            </span>
+
+                                        {% else %}
+
+                                            <span class="badge bg-danger">
+                                                却下
+                                            </span>
+
+                                        {% endif %}
+
+
+                                    </div>
+
+
+                                </div>
+
+
+                            </div>
+
+
+                        {% endfor %}
+
+
+                    </div>
+
+
+                {% else %}
+
+
+                    <div class="text-center text-muted py-4">
+
+                        申請履歴はありません。
+
+                    </div>
+
+
+                {% endif %}
+
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- 勤务希望 -->
+
+    <div>
+
+        <h5 class="section-title mb-3">
+            登録済み勤務希望
+        </h5>
+
+
+        <div class="card main-card">
+
+            <div class="card-body p-0">
+
+
+                {% if availability_list %}
+
+
+                    <div class="list-group list-group-flush">
+
+
+                        {% for item in availability_list %}
+
+
+                            <div class="list-group-item px-4 py-3">
+
+
+                                <div
+                                    class="
+                                        d-flex
+                                        justify-content-between
+                                        align-items-center
+                                    ">
+
+
+                                    <div>
+
+                                        <div class="fw-semibold">
+                                            {{ item.work_date }}
+                                        </div>
+
+
+                                        {% if item.preference_type == "off" %}
+
+                                            <div class="text-danger">
+                                                希望休
+                                            </div>
+
+                                        {% else %}
+
+                                            <div class="text-muted">
+
+                                                {{ item.start_time }}
+                                                ～
+                                                {{ item.end_time }}
+
+                                            </div>
+
+                                        {% endif %}
+
+                                    </div>
+
+
+                                    {% if item.preference_type == "off" %}
+
+                                        <span class="badge bg-danger">
+                                            休み
+                                        </span>
+
+                                    {% else %}
+
+                                        <span class="badge bg-primary">
+                                            勤務可能
+                                        </span>
+
+                                    {% endif %}
+
+
+                                </div>
+
+                            </div>
+
+
+                        {% endfor %}
+
+
+                    </div>
+
+
+                {% else %}
+
+
+                    <div class="text-center text-muted py-4">
+
+                        今後の勤務希望は登録されていません。
+
+                    </div>
+
+
+                {% endif %}
+
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+</div>
+
+
+</body>
+
+</html>
