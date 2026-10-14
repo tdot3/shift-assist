@@ -1,3 +1,4 @@
+import os
 import sqlite3
 
 from datetime import date, datetime, timedelta
@@ -12,14 +13,57 @@ from flask import (
     flash
 )
 
+from dotenv import load_dotenv
+
 from werkzeug.security import (
     generate_password_hash,
     check_password_hash
 )
 
 
+# ==================================================
+# 环境变量
+# ==================================================
+
+load_dotenv()
+
+
+SECRET_KEY = os.getenv(
+    "SECRET_KEY"
+)
+
+ADMIN_USERNAME = os.getenv(
+    "ADMIN_USERNAME"
+)
+
+ADMIN_PASSWORD = os.getenv(
+    "ADMIN_PASSWORD"
+)
+
+
+if not SECRET_KEY:
+    raise RuntimeError(
+        "SECRET_KEY が .env に設定されていません"
+    )
+
+if not ADMIN_USERNAME:
+    raise RuntimeError(
+        "ADMIN_USERNAME が .env に設定されていません"
+    )
+
+if not ADMIN_PASSWORD:
+    raise RuntimeError(
+        "ADMIN_PASSWORD が .env に設定されていません"
+    )
+
+
+# ==================================================
+# Flask
+# ==================================================
+
 app = Flask(__name__)
-app.secret_key = "shift_manage_secret_key"
+
+app.secret_key = SECRET_KEY
 
 
 # ==================================================
@@ -27,14 +71,32 @@ app.secret_key = "shift_manage_secret_key"
 # ==================================================
 
 def time_to_minutes(time_text):
-    hour, minute = map(int, time_text.split(":"))
-    return hour * 60 + minute
+
+    hour, minute = map(
+        int,
+        time_text.split(":")
+    )
+
+    return (
+        hour * 60
+        + minute
+    )
 
 
 def get_db_connection():
-    conn = sqlite3.connect("shift.db")
-    conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA foreign_keys = ON")
+
+    conn = sqlite3.connect(
+        "shift.db"
+    )
+
+    conn.row_factory = (
+        sqlite3.Row
+    )
+
+    conn.execute(
+        "PRAGMA foreign_keys = ON"
+    )
+
     return conn
 
 
@@ -46,56 +108,124 @@ def init_db():
 
     conn = get_db_connection()
 
+
+    # ------------------------------
+    # Staff
+    # ------------------------------
+
     conn.execute("""
         CREATE TABLE IF NOT EXISTS staff (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL,
+
+            id INTEGER
+            PRIMARY KEY
+            AUTOINCREMENT,
+
+            name TEXT
+            NOT NULL,
+
             password_hash TEXT
         )
     """)
 
+
+    # ------------------------------
+    # Shifts
+    # ------------------------------
+
     conn.execute("""
         CREATE TABLE IF NOT EXISTS shifts (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            employee_id INTEGER NOT NULL,
-            shift_date TEXT NOT NULL,
-            start_time TEXT NOT NULL,
-            end_time TEXT NOT NULL,
-            source TEXT NOT NULL DEFAULT 'manual',
 
-            FOREIGN KEY (employee_id)
+            id INTEGER
+            PRIMARY KEY
+            AUTOINCREMENT,
+
+            employee_id INTEGER
+            NOT NULL,
+
+            shift_date TEXT
+            NOT NULL,
+
+            start_time TEXT
+            NOT NULL,
+
+            end_time TEXT
+            NOT NULL,
+
+            source TEXT
+            NOT NULL
+            DEFAULT 'manual',
+
+            FOREIGN KEY (
+                employee_id
+            )
+
             REFERENCES staff(id)
         )
     """)
 
+
+    # ------------------------------
+    # Availability
+    # ------------------------------
+
     conn.execute("""
         CREATE TABLE IF NOT EXISTS availability (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            employee_id INTEGER NOT NULL,
-            work_date TEXT NOT NULL,
-            preference_type TEXT NOT NULL,
+
+            id INTEGER
+            PRIMARY KEY
+            AUTOINCREMENT,
+
+            employee_id INTEGER
+            NOT NULL,
+
+            work_date TEXT
+            NOT NULL,
+
+            preference_type TEXT
+            NOT NULL,
+
             start_time TEXT,
+
             end_time TEXT,
 
-            UNIQUE(
+            UNIQUE (
                 employee_id,
                 work_date
             ),
 
-            FOREIGN KEY (employee_id)
+            FOREIGN KEY (
+                employee_id
+            )
+
             REFERENCES staff(id)
         )
     """)
 
+
+    # ------------------------------
+    # Staffing Requirements
+    # ------------------------------
+
     conn.execute("""
         CREATE TABLE IF NOT EXISTS staffing_requirements (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            work_date TEXT NOT NULL,
-            start_time TEXT NOT NULL,
-            end_time TEXT NOT NULL,
-            required_staff INTEGER NOT NULL,
 
-            UNIQUE(
+            id INTEGER
+            PRIMARY KEY
+            AUTOINCREMENT,
+
+            work_date TEXT
+            NOT NULL,
+
+            start_time TEXT
+            NOT NULL,
+
+            end_time TEXT
+            NOT NULL,
+
+            required_staff INTEGER
+            NOT NULL,
+
+            UNIQUE (
                 work_date,
                 start_time,
                 end_time
@@ -103,21 +233,34 @@ def init_db():
         )
     """)
 
+
+    # ------------------------------
+    # Shift Requests
+    # ------------------------------
+
     conn.execute("""
         CREATE TABLE IF NOT EXISTS shift_requests (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
 
-            employee_id INTEGER NOT NULL,
+            id INTEGER
+            PRIMARY KEY
+            AUTOINCREMENT,
+
+            employee_id INTEGER
+            NOT NULL,
 
             shift_id INTEGER,
 
-            shift_date TEXT NOT NULL,
+            shift_date TEXT
+            NOT NULL,
 
-            original_start_time TEXT NOT NULL,
+            original_start_time TEXT
+            NOT NULL,
 
-            original_end_time TEXT NOT NULL,
+            original_end_time TEXT
+            NOT NULL,
 
-            request_type TEXT NOT NULL,
+            request_type TEXT
+            NOT NULL,
 
             requested_start_time TEXT,
 
@@ -125,36 +268,58 @@ def init_db():
 
             reason TEXT,
 
-            status TEXT NOT NULL DEFAULT 'pending',
+            status TEXT
+            NOT NULL
+            DEFAULT 'pending',
 
-            created_at TEXT NOT NULL,
+            created_at TEXT
+            NOT NULL,
 
-            FOREIGN KEY (employee_id)
+            FOREIGN KEY (
+                employee_id
+            )
+
             REFERENCES staff(id)
+
             ON DELETE CASCADE,
 
-            FOREIGN KEY (shift_id)
+            FOREIGN KEY (
+                shift_id
+            )
+
             REFERENCES shifts(id)
+
             ON DELETE SET NULL
         )
     """)
 
+
+    # ==================================================
     # 旧数据库兼容
+    # ==================================================
+
     staff_columns = conn.execute(
         "PRAGMA table_info(staff)"
     ).fetchall()
 
     staff_column_names = [
         column["name"]
-        for column in staff_columns
+        for column
+        in staff_columns
     ]
 
-    if "password_hash" not in staff_column_names:
+    if (
+        "password_hash"
+        not in staff_column_names
+    ):
 
         conn.execute("""
             ALTER TABLE staff
-            ADD COLUMN password_hash TEXT
+
+            ADD COLUMN
+            password_hash TEXT
         """)
+
 
     shift_columns = conn.execute(
         "PRAGMA table_info(shifts)"
@@ -162,19 +327,29 @@ def init_db():
 
     shift_column_names = [
         column["name"]
-        for column in shift_columns
+        for column
+        in shift_columns
     ]
 
-    if "source" not in shift_column_names:
+    if (
+        "source"
+        not in shift_column_names
+    ):
 
         conn.execute("""
             ALTER TABLE shifts
-            ADD COLUMN source TEXT
+
+            ADD COLUMN
+            source TEXT
             NOT NULL
             DEFAULT 'manual'
         """)
 
-    # 旧员工初始化PIN
+
+    # ==================================================
+    # 旧员工初始PIN
+    # ==================================================
+
     staff_list = conn.execute("""
         SELECT
             id,
@@ -183,13 +358,18 @@ def init_db():
         FROM staff
     """).fetchall()
 
+
     for staff in staff_list:
 
-        if not staff["password_hash"]:
+        if not staff[
+            "password_hash"
+        ]:
 
-            password_hash = generate_password_hash(
-                "1234",
-                method="pbkdf2:sha256"
+            password_hash = (
+                generate_password_hash(
+                    "1234",
+                    method="pbkdf2:sha256"
+                )
             )
 
             conn.execute("""
@@ -203,36 +383,67 @@ def init_db():
                 staff["id"]
             ))
 
+
     conn.commit()
     conn.close()
 
 
 # ==================================================
-# 登录检查
+# 管理者登录检查
 # ==================================================
 
 def login_required(f):
 
     @wraps(f)
-    def decorated_function(*args, **kwargs):
 
-        if "user" not in session:
-            return redirect("/login")
+    def decorated_function(
+        *args,
+        **kwargs
+    ):
 
-        return f(*args, **kwargs)
+        if (
+            "user"
+            not in session
+        ):
+
+            return redirect(
+                "/login"
+            )
+
+        return f(
+            *args,
+            **kwargs
+        )
 
     return decorated_function
 
 
+# ==================================================
+# 员工登录检查
+# ==================================================
+
 def employee_login_required(f):
 
     @wraps(f)
-    def decorated_function(*args, **kwargs):
 
-        if "employee_id" not in session:
-            return redirect("/employee/login")
+    def decorated_function(
+        *args,
+        **kwargs
+    ):
 
-        return f(*args, **kwargs)
+        if (
+            "employee_id"
+            not in session
+        ):
+
+            return redirect(
+                "/employee/login"
+            )
+
+        return f(
+            *args,
+            **kwargs
+        )
 
     return decorated_function
 
@@ -243,42 +454,76 @@ def employee_login_required(f):
 
 @app.route(
     "/login",
-    methods=["GET", "POST"]
+    methods=[
+        "GET",
+        "POST"
+    ]
 )
 def login():
 
-    if request.method == "POST":
+    if (
+        request.method
+        == "POST"
+    ):
 
-        username = request.form["username"]
-        password = request.form["password"]
+        username = request.form[
+            "username"
+        ]
+
+        password = request.form[
+            "password"
+        ]
+
 
         if (
-            username == "admin"
-            and password == "123456"
+            username
+            == ADMIN_USERNAME
+
+            and
+
+            password
+            == ADMIN_PASSWORD
         ):
 
             session.clear()
-            session["user"] = username
 
-            return redirect("/dashboard")
+            session[
+                "user"
+            ] = username
+
+            return redirect(
+                "/dashboard"
+            )
+
 
         flash(
             "ユーザー名またはパスワードが間違っています"
         )
 
-        return redirect("/login")
+        return redirect(
+            "/login"
+        )
+
 
     return render_template(
         "login.html"
     )
 
 
-@app.route("/logout")
+# ==================================================
+# 管理者登出
+# ==================================================
+
+@app.route(
+    "/logout"
+)
 def logout():
 
     session.clear()
 
-    return redirect("/login")
+    return redirect(
+        "/login"
+    )
 
 
 # ==================================================
@@ -287,20 +532,34 @@ def logout():
 
 @app.route(
     "/employee/login",
-    methods=["GET", "POST"]
+    methods=[
+        "GET",
+        "POST"
+    ]
 )
 def employee_login():
 
-    if request.method == "POST":
+    if (
+        request.method
+        == "POST"
+    ):
 
-        staff_id_text = request.form[
-            "staff_id"
-        ].strip()
+        staff_id_text = (
+            request.form[
+                "staff_id"
+            ].strip()
+        )
 
-        pin = request.form["pin"]
+        pin = request.form[
+            "pin"
+        ]
+
 
         try:
-            staff_id = int(staff_id_text)
+
+            staff_id = int(
+                staff_id_text
+            )
 
         except ValueError:
 
@@ -312,7 +571,11 @@ def employee_login():
                 "/employee/login"
             )
 
-        conn = get_db_connection()
+
+        conn = (
+            get_db_connection()
+        )
+
 
         staff = conn.execute("""
             SELECT
@@ -327,13 +590,25 @@ def employee_login():
             staff_id,
         )).fetchone()
 
+
         conn.close()
+
 
         if (
             staff is None
-            or not staff["password_hash"]
-            or not check_password_hash(
-                staff["password_hash"],
+
+            or
+
+            not staff[
+                "password_hash"
+            ]
+
+            or
+
+            not check_password_hash(
+                staff[
+                    "password_hash"
+                ],
                 pin
             )
         ):
@@ -346,19 +621,35 @@ def employee_login():
                 "/employee/login"
             )
 
+
         session.clear()
 
-        session["employee_id"] = staff["id"]
-        session["employee_name"] = staff["name"]
+        session[
+            "employee_id"
+        ] = staff["id"]
 
-        return redirect("/employee")
+        session[
+            "employee_name"
+        ] = staff["name"]
+
+
+        return redirect(
+            "/employee"
+        )
+
 
     return render_template(
         "employee_login.html"
     )
 
 
-@app.route("/employee/logout")
+# ==================================================
+# 员工登出
+# ==================================================
+
+@app.route(
+    "/employee/logout"
+)
 def employee_logout():
 
     session.clear()
@@ -372,22 +663,34 @@ def employee_logout():
 # 员工首页
 # ==================================================
 
-@app.route("/employee")
+@app.route(
+    "/employee"
+)
 @employee_login_required
 def employee_home():
 
-    employee_id = session[
-        "employee_id"
-    ]
+    employee_id = (
+        session[
+            "employee_id"
+        ]
+    )
+
 
     today = date.today()
 
+
     display_end = (
         today
-        + timedelta(days=30)
+        + timedelta(
+            days=30
+        )
     )
 
-    conn = get_db_connection()
+
+    conn = (
+        get_db_connection()
+    )
+
 
     staff = conn.execute("""
         SELECT
@@ -401,25 +704,35 @@ def employee_home():
         employee_id,
     )).fetchone()
 
-    if staff is None:
+
+    if (
+        staff is None
+    ):
 
         conn.close()
+
         session.clear()
 
         return redirect(
             "/employee/login"
         )
 
+
     shifts = conn.execute("""
         SELECT
             shifts.id,
+
             shifts.shift_date,
+
             shifts.start_time,
+
             shifts.end_time,
+
             shifts.source,
 
             (
-                SELECT shift_requests.id
+                SELECT
+                    shift_requests.id
 
                 FROM shift_requests
 
@@ -428,6 +741,7 @@ def employee_home():
                     = shifts.id
 
                     AND
+
                     shift_requests.status
                     = 'pending'
 
@@ -441,111 +755,168 @@ def employee_home():
             shifts.employee_id = ?
 
             AND
+
             shifts.shift_date >= ?
 
             AND
+
             shifts.shift_date <= ?
 
         ORDER BY
             shifts.shift_date,
             shifts.start_time
     """, (
+
         employee_id,
+
         today.isoformat(),
+
         display_end.isoformat()
+
     )).fetchall()
 
-    availability_list = conn.execute("""
-        SELECT
-            work_date,
-            preference_type,
-            start_time,
-            end_time
 
-        FROM availability
+    availability_list = (
+        conn.execute("""
+            SELECT
+                work_date,
 
-        WHERE
-            employee_id = ?
-            AND
-            work_date >= ?
+                preference_type,
 
-        ORDER BY work_date
+                start_time,
 
-        LIMIT 10
-    """, (
-        employee_id,
-        today.isoformat()
-    )).fetchall()
+                end_time
 
-    request_history = conn.execute("""
-        SELECT
-            id,
-            shift_date,
-            original_start_time,
-            original_end_time,
-            request_type,
-            requested_start_time,
-            requested_end_time,
-            reason,
-            status,
-            created_at
+            FROM availability
 
-        FROM shift_requests
+            WHERE
+                employee_id = ?
 
-        WHERE employee_id = ?
+                AND
 
-        ORDER BY id DESC
+                work_date >= ?
 
-        LIMIT 10
-    """, (
-        employee_id,
-    )).fetchall()
+            ORDER BY
+                work_date
+
+            LIMIT 10
+        """, (
+
+            employee_id,
+
+            today.isoformat()
+
+        )).fetchall()
+    )
+
+
+    request_history = (
+        conn.execute("""
+            SELECT
+                id,
+
+                shift_date,
+
+                original_start_time,
+
+                original_end_time,
+
+                request_type,
+
+                requested_start_time,
+
+                requested_end_time,
+
+                reason,
+
+                status,
+
+                created_at
+
+            FROM shift_requests
+
+            WHERE
+                employee_id = ?
+
+            ORDER BY
+                id DESC
+
+            LIMIT 10
+        """, (
+            employee_id,
+        )).fetchall()
+    )
+
 
     conn.close()
 
+
     return render_template(
+
         "employee_home.html",
 
         staff=staff,
 
         shifts=shifts,
 
-        availability_list=availability_list,
+        availability_list=(
+            availability_list
+        ),
 
-        request_history=request_history,
+        request_history=(
+            request_history
+        ),
 
-        today=today.isoformat(),
+        today=(
+            today.isoformat()
+        ),
 
-        display_end=display_end.isoformat()
+        display_end=(
+            display_end.isoformat()
+        )
     )
 
 
 # ==================================================
-# 员工提交申请
+# 员工休假 / 时间变更申请
 # ==================================================
 
 @app.route(
     "/employee/request/<int:shift_id>",
-    methods=["GET", "POST"]
+    methods=[
+        "GET",
+        "POST"
+    ]
 )
 @employee_login_required
 def employee_shift_request(
     shift_id
 ):
 
-    employee_id = session[
-        "employee_id"
-    ]
+    employee_id = (
+        session[
+            "employee_id"
+        ]
+    )
 
-    conn = get_db_connection()
+
+    conn = (
+        get_db_connection()
+    )
+
 
     shift = conn.execute("""
         SELECT
             shifts.id,
+
             shifts.employee_id,
+
             shifts.shift_date,
+
             shifts.start_time,
+
             shifts.end_time,
+
             staff.name
 
         FROM shifts
@@ -560,13 +931,20 @@ def employee_shift_request(
             shifts.id = ?
 
             AND
+
             shifts.employee_id = ?
     """, (
+
         shift_id,
+
         employee_id
+
     )).fetchone()
 
-    if shift is None:
+
+    if (
+        shift is None
+    ):
 
         conn.close()
 
@@ -578,25 +956,38 @@ def employee_shift_request(
             "/employee"
         )
 
+
+    # ==================================================
     # 24小时前截止
+    # ==================================================
+
     shift_start_datetime = (
         datetime.strptime(
             (
-                shift["shift_date"]
+                shift[
+                    "shift_date"
+                ]
                 + " "
-                + shift["start_time"]
+                + shift[
+                    "start_time"
+                ]
             ),
             "%Y-%m-%d %H:%M"
         )
     )
+
 
     remaining_time = (
         shift_start_datetime
         - datetime.now()
     )
 
-    if remaining_time <= timedelta(
-        hours=24
+
+    if (
+        remaining_time
+        <= timedelta(
+            hours=24
+        )
     ):
 
         conn.close()
@@ -611,6 +1002,11 @@ def employee_shift_request(
             "/employee"
         )
 
+
+    # ==================================================
+    # 同一班次的待处理申请
+    # ==================================================
+
     pending = conn.execute("""
         SELECT id
 
@@ -618,15 +1014,24 @@ def employee_shift_request(
 
         WHERE
             shift_id = ?
+
             AND
+
             status = 'pending'
     """, (
         shift_id,
     )).fetchone()
 
-    if request.method == "POST":
 
-        if pending is not None:
+    if (
+        request.method
+        == "POST"
+    ):
+
+
+        if (
+            pending is not None
+        ):
 
             conn.close()
 
@@ -638,26 +1043,49 @@ def employee_shift_request(
                 "/employee"
             )
 
-        request_type = request.form[
-            "request_type"
-        ]
 
-        reason = request.form.get(
-            "reason",
-            ""
-        ).strip()
+        request_type = (
+            request.form[
+                "request_type"
+            ]
+        )
+
+
+        reason = (
+            request.form.get(
+                "reason",
+                ""
+            ).strip()
+        )
+
 
         requested_start_time = None
+
         requested_end_time = None
 
+
+        # ==================================================
         # 休假
-        if request_type == "leave":
+        # ==================================================
+
+        if (
+            request_type
+            == "leave"
+        ):
 
             requested_start_time = None
+
             requested_end_time = None
 
+
+        # ==================================================
         # 时间变更
-        elif request_type == "change":
+        # ==================================================
+
+        elif (
+            request_type
+            == "change"
+        ):
 
             requested_start_time = (
                 request.form.get(
@@ -673,9 +1101,13 @@ def employee_shift_request(
                 )
             )
 
+
             if (
                 not requested_start_time
-                or not requested_end_time
+
+                or
+
+                not requested_end_time
             ):
 
                 conn.close()
@@ -688,11 +1120,14 @@ def employee_shift_request(
                     f"/employee/request/{shift_id}"
                 )
 
+
             if (
                 time_to_minutes(
                     requested_end_time
                 )
+
                 <=
+
                 time_to_minutes(
                     requested_start_time
                 )
@@ -708,22 +1143,32 @@ def employee_shift_request(
                     f"/employee/request/{shift_id}"
                 )
 
-            # 修改后的时间必须在原班次范围内
+
             if (
                 time_to_minutes(
                     requested_start_time
                 )
+
                 <
+
                 time_to_minutes(
-                    shift["start_time"]
+                    shift[
+                        "start_time"
+                    ]
                 )
+
                 or
+
                 time_to_minutes(
                     requested_end_time
                 )
+
                 >
+
                 time_to_minutes(
-                    shift["end_time"]
+                    shift[
+                        "end_time"
+                    ]
                 )
             ):
 
@@ -738,12 +1183,19 @@ def employee_shift_request(
                     f"/employee/request/{shift_id}"
                 )
 
+
             if (
                 requested_start_time
-                == shift["start_time"]
+                == shift[
+                    "start_time"
+                ]
+
                 and
+
                 requested_end_time
-                == shift["end_time"]
+                == shift[
+                    "end_time"
+                ]
             ):
 
                 conn.close()
@@ -755,6 +1207,7 @@ def employee_shift_request(
                 return redirect(
                     f"/employee/request/{shift_id}"
                 )
+
 
         else:
 
@@ -768,18 +1221,34 @@ def employee_shift_request(
                 f"/employee/request/{shift_id}"
             )
 
+
+        # ==================================================
+        # 保存申请
+        # ==================================================
+
         conn.execute("""
             INSERT INTO shift_requests (
+
                 employee_id,
+
                 shift_id,
+
                 shift_date,
+
                 original_start_time,
+
                 original_end_time,
+
                 request_type,
+
                 requested_start_time,
+
                 requested_end_time,
+
                 reason,
+
                 status,
+
                 created_at
             )
 
@@ -789,32 +1258,55 @@ def employee_shift_request(
                 'pending', ?
             )
         """, (
+
             employee_id,
+
             shift["id"],
-            shift["shift_date"],
-            shift["start_time"],
-            shift["end_time"],
+
+            shift[
+                "shift_date"
+            ],
+
+            shift[
+                "start_time"
+            ],
+
+            shift[
+                "end_time"
+            ],
+
             request_type,
+
             requested_start_time,
+
             requested_end_time,
+
             reason,
+
             datetime.now().strftime(
                 "%Y-%m-%d %H:%M"
             )
+
         ))
 
+
         conn.commit()
+
         conn.close()
+
 
         flash(
             "申請を送信しました"
         )
 
+
         return redirect(
             "/employee"
         )
 
+
     conn.close()
+
 
     return render_template(
         "employee_request.html",
@@ -823,7 +1315,7 @@ def employee_shift_request(
 
 
 # ==================================================
-# 申请批准后的缺员计算
+# 取得会受申请影响的必要人数条件
 # ==================================================
 
 def get_affected_requirements(
@@ -831,33 +1323,46 @@ def get_affected_requirements(
     request_item
 ):
 
-    requirements = conn.execute("""
-        SELECT
-            work_date,
-            start_time,
-            end_time,
-            required_staff
+    requirements = (
+        conn.execute("""
+            SELECT
+                work_date,
 
-        FROM staffing_requirements
+                start_time,
 
-        WHERE work_date = ?
+                end_time,
 
-        ORDER BY start_time
-    """, (
-        request_item[
-            "shift_date"
-        ],
-    )).fetchall()
+                required_staff
+
+            FROM staffing_requirements
+
+            WHERE
+                work_date = ?
+
+            ORDER BY
+                start_time
+        """, (
+            request_item[
+                "shift_date"
+            ],
+        )).fetchall()
+    )
+
 
     affected = []
 
+
     for requirement in requirements:
 
+
         original_covers = (
+
             request_item[
                 "original_start_time"
             ]
+
             <=
+
             requirement[
                 "start_time"
             ]
@@ -867,16 +1372,24 @@ def get_affected_requirements(
             request_item[
                 "original_end_time"
             ]
+
             >=
+
             requirement[
                 "end_time"
             ]
         )
 
-        if not original_covers:
+
+        if (
+            not original_covers
+        ):
+
             continue
 
+
         after_covers = False
+
 
         if (
             request_item[
@@ -886,10 +1399,13 @@ def get_affected_requirements(
         ):
 
             after_covers = (
+
                 request_item[
                     "requested_start_time"
                 ]
+
                 <=
+
                 requirement[
                     "start_time"
                 ]
@@ -899,19 +1415,30 @@ def get_affected_requirements(
                 request_item[
                     "requested_end_time"
                 ]
+
                 >=
+
                 requirement[
                     "end_time"
                 ]
             )
 
-        if not after_covers:
+
+        if (
+            not after_covers
+        ):
+
             affected.append(
                 requirement
             )
 
+
     return affected
 
+
+# ==================================================
+# 计算批准后缺员
+# ==================================================
 
 def calculate_request_shortage(
     conn,
@@ -925,54 +1452,76 @@ def calculate_request_shortage(
         )
     )
 
+
     shortage_total = 0
 
-    for requirement in affected_requirements:
 
-        assigned_count = conn.execute("""
-            SELECT
-                COUNT(
-                    DISTINCT employee_id
-                ) AS count
+    for requirement in (
+        affected_requirements
+    ):
 
-            FROM shifts
 
-            WHERE
-                shift_date = ?
+        assigned_count = (
+            conn.execute("""
+                SELECT
+                    COUNT(
+                        DISTINCT employee_id
+                    ) AS count
 
-                AND
-                start_time <= ?
+                FROM shifts
 
-                AND
-                end_time >= ?
-        """, (
-            requirement[
-                "work_date"
-            ],
+                WHERE
+                    shift_date = ?
 
-            requirement[
-                "start_time"
-            ],
+                    AND
 
-            requirement[
-                "end_time"
+                    start_time <= ?
+
+                    AND
+
+                    end_time >= ?
+            """, (
+
+                requirement[
+                    "work_date"
+                ],
+
+                requirement[
+                    "start_time"
+                ],
+
+                requirement[
+                    "end_time"
+                ]
+
+            )).fetchone()[
+                "count"
             ]
-        )).fetchone()["count"]
+        )
+
 
         assigned_after = max(
             assigned_count - 1,
             0
         )
 
+
         shortage = max(
+
             requirement[
                 "required_staff"
             ]
+
             - assigned_after,
+
             0
         )
 
-        shortage_total += shortage
+
+        shortage_total += (
+            shortage
+        )
+
 
     return shortage_total
 
@@ -993,162 +1542,240 @@ def find_replacement_candidates(
         )
     )
 
-    if not affected_requirements:
 
-        return [], None, None
+    if (
+        not affected_requirements
+    ):
 
-    # 必须补上的时间范围
+        return (
+            [],
+            None,
+            None
+        )
+
+
+    # ==================================================
+    # 需要补上的时间
+    # ==================================================
+
     target_start = min(
-        item["start_time"]
+
+        item[
+            "start_time"
+        ]
+
         for item
         in affected_requirements
     )
+
 
     target_end = max(
-        item["end_time"]
+
+        item[
+            "end_time"
+        ]
+
         for item
         in affected_requirements
     )
 
+
     target_duration = (
-        time_to_minutes(target_end)
+
+        time_to_minutes(
+            target_end
+        )
+
         -
-        time_to_minutes(target_start)
+
+        time_to_minutes(
+            target_start
+        )
     )
 
-    # 先从勤務希望里找
-    candidate_rows = conn.execute("""
-        SELECT
-            staff.id,
-            staff.name,
 
-            availability.start_time
-            AS available_start,
+    # ==================================================
+    # 从勤務希望中找候补
+    # ==================================================
 
-            availability.end_time
-            AS available_end,
+    candidate_rows = (
+        conn.execute("""
+            SELECT
+                staff.id,
 
-            (
-                SELECT COUNT(*)
+                staff.name,
 
-                FROM shifts AS all_shifts
+                availability.start_time
+                AS available_start,
 
-                WHERE
-                    all_shifts.employee_id
-                    = staff.id
+                availability.end_time
+                AS available_end,
 
-            ) AS total_shift_count
+                (
+                    SELECT
+                        COUNT(*)
 
-        FROM staff
+                    FROM shifts
+                    AS all_shifts
 
-        JOIN availability
+                    WHERE
+                        all_shifts.employee_id
+                        = staff.id
 
-        ON
-            availability.employee_id
-            = staff.id
+                ) AS total_shift_count
 
-        WHERE
-            staff.id != ?
+            FROM staff
 
-            AND
-            availability.work_date = ?
+            JOIN availability
 
-            AND
-            availability.preference_type
-            = 'available'
+            ON
+                availability.employee_id
+                = staff.id
 
-            AND
-            availability.start_time <= ?
+            WHERE
+                staff.id != ?
 
-            AND
-            availability.end_time >= ?
+                AND
 
-            AND NOT EXISTS (
+                availability.work_date
+                = ?
 
-                SELECT 1
+                AND
 
-                FROM shifts
-                AS conflict_shift
+                availability.preference_type
+                = 'available'
 
-                WHERE
-                    conflict_shift.employee_id
-                    = staff.id
+                AND
 
-                    AND
-                    conflict_shift.shift_date
-                    = ?
+                availability.start_time
+                <= ?
 
-                    AND
-                    conflict_shift.start_time
-                    < ?
+                AND
 
-                    AND
-                    conflict_shift.end_time
-                    > ?
-            )
+                availability.end_time
+                >= ?
 
-        ORDER BY
-            total_shift_count ASC,
-            staff.id ASC
-    """, (
-        request_item[
-            "employee_id"
-        ],
+                AND NOT EXISTS (
 
-        request_item[
-            "shift_date"
-        ],
+                    SELECT 1
 
-        target_start,
+                    FROM shifts
+                    AS conflict_shift
 
-        target_end,
+                    WHERE
+                        conflict_shift.employee_id
+                        = staff.id
 
-        request_item[
-            "shift_date"
-        ],
+                        AND
 
-        target_end,
+                        conflict_shift.shift_date
+                        = ?
 
-        target_start
-    )).fetchall()
+                        AND
+
+                        conflict_shift.start_time
+                        < ?
+
+                        AND
+
+                        conflict_shift.end_time
+                        > ?
+                )
+
+            ORDER BY
+                total_shift_count ASC,
+
+                staff.id ASC
+        """, (
+
+            request_item[
+                "employee_id"
+            ],
+
+            request_item[
+                "shift_date"
+            ],
+
+            target_start,
+
+            target_end,
+
+            request_item[
+                "shift_date"
+            ],
+
+            target_end,
+
+            target_start
+
+        )).fetchall()
+    )
+
 
     candidates = []
 
-    # 再检查一天总工时不能超过8小时
-    for candidate in candidate_rows:
 
-        same_day_shifts = conn.execute("""
-            SELECT
-                start_time,
-                end_time
+    # ==================================================
+    # 1日总工时不得超过8小时
+    # ==================================================
 
-            FROM shifts
+    for candidate in (
+        candidate_rows
+    ):
 
-            WHERE
-                employee_id = ?
 
-                AND
-                shift_date = ?
-        """, (
-            candidate["id"],
-            request_item[
-                "shift_date"
-            ]
-        )).fetchall()
+        same_day_shifts = (
+            conn.execute("""
+                SELECT
+                    start_time,
+                    end_time
+
+                FROM shifts
+
+                WHERE
+                    employee_id = ?
+
+                    AND
+
+                    shift_date = ?
+            """, (
+
+                candidate[
+                    "id"
+                ],
+
+                request_item[
+                    "shift_date"
+                ]
+
+            )).fetchall()
+        )
+
 
         current_minutes = 0
 
-        for shift in same_day_shifts:
+
+        for shift in (
+            same_day_shifts
+        ):
 
             current_minutes += (
+
                 time_to_minutes(
-                    shift["end_time"]
+                    shift[
+                        "end_time"
+                    ]
                 )
+
                 -
+
                 time_to_minutes(
-                    shift["start_time"]
+                    shift[
+                        "start_time"
+                    ]
                 )
             )
+
 
         if (
             current_minutes
@@ -1159,10 +1786,14 @@ def find_replacement_candidates(
             candidates.append({
 
                 "id":
-                    candidate["id"],
+                    candidate[
+                        "id"
+                    ],
 
                 "name":
-                    candidate["name"],
+                    candidate[
+                        "name"
+                    ],
 
                 "available_start":
                     candidate[
@@ -1183,21 +1814,30 @@ def find_replacement_candidates(
                     current_minutes
             })
 
+
     return (
+
         candidates,
+
         target_start,
+
         target_end
     )
 
 
 # ==================================================
-# 实际应用员工申请
+# 应用员工申请
 # ==================================================
 
 def apply_shift_request(
     conn,
     request_item
 ):
+
+
+    # ==================================================
+    # 休假
+    # ==================================================
 
     if (
         request_item[
@@ -1206,16 +1846,23 @@ def apply_shift_request(
         == "leave"
     ):
 
-        if request_item["shift_id"]:
+        if (
+            request_item[
+                "shift_id"
+            ]
+        ):
 
             conn.execute("""
                 DELETE FROM shifts
 
                 WHERE
                     id = ?
+
                     AND
+
                     employee_id = ?
             """, (
+
                 request_item[
                     "shift_id"
                 ],
@@ -1223,7 +1870,13 @@ def apply_shift_request(
                 request_item[
                     "employee_id"
                 ]
+
             ))
+
+
+    # ==================================================
+    # 时间变更
+    # ==================================================
 
     elif (
         request_item[
@@ -1232,20 +1885,28 @@ def apply_shift_request(
         == "change"
     ):
 
-        if request_item["shift_id"]:
+        if (
+            request_item[
+                "shift_id"
+            ]
+        ):
 
             conn.execute("""
                 UPDATE shifts
 
                 SET
                     start_time = ?,
+
                     end_time = ?
 
                 WHERE
                     id = ?
+
                     AND
+
                     employee_id = ?
             """, (
+
                 request_item[
                     "requested_start_time"
                 ],
@@ -1261,6 +1922,7 @@ def apply_shift_request(
                 request_item[
                     "employee_id"
                 ]
+
             ))
 
 
@@ -1268,60 +1930,97 @@ def apply_shift_request(
 # 管理者：申请管理
 # ==================================================
 
-@app.route("/requests")
+@app.route(
+    "/requests"
+)
 @login_required
 def request_management():
 
-    conn = get_db_connection()
+    conn = (
+        get_db_connection()
+    )
 
-    request_list = conn.execute("""
-        SELECT
-            shift_requests.id,
-            shift_requests.employee_id,
-            shift_requests.shift_id,
-            shift_requests.shift_date,
-            shift_requests.original_start_time,
-            shift_requests.original_end_time,
-            shift_requests.request_type,
-            shift_requests.requested_start_time,
-            shift_requests.requested_end_time,
-            shift_requests.reason,
-            shift_requests.status,
-            shift_requests.created_at,
 
-            staff.name
+    request_list = (
+        conn.execute("""
+            SELECT
+                shift_requests.id,
 
-        FROM shift_requests
+                shift_requests.employee_id,
 
-        JOIN staff
+                shift_requests.shift_id,
 
-        ON
-            shift_requests.employee_id
-            = staff.id
+                shift_requests.shift_date,
 
-        ORDER BY
-            CASE
-                WHEN shift_requests.status
-                = 'pending'
-                THEN 0
-                ELSE 1
-            END,
+                shift_requests.original_start_time,
 
-            shift_requests.id DESC
-    """).fetchall()
+                shift_requests.original_end_time,
+
+                shift_requests.request_type,
+
+                shift_requests.requested_start_time,
+
+                shift_requests.requested_end_time,
+
+                shift_requests.reason,
+
+                shift_requests.status,
+
+                shift_requests.created_at,
+
+                staff.name
+
+            FROM shift_requests
+
+            JOIN staff
+
+            ON
+                shift_requests.employee_id
+                = staff.id
+
+            ORDER BY
+
+                CASE
+
+                    WHEN
+                        shift_requests.status
+                        = 'pending'
+
+                    THEN 0
+
+                    ELSE 1
+
+                END,
+
+                shift_requests.id DESC
+        """).fetchall()
+    )
+
 
     result = []
 
-    for item in request_list:
+
+    for item in (
+        request_list
+    ):
+
 
         shortage_after = 0
 
         candidates = []
 
         replacement_start = None
+
         replacement_end = None
 
-        if item["status"] == "pending":
+
+        if (
+            item[
+                "status"
+            ]
+            == "pending"
+        ):
+
 
             shortage_after = (
                 calculate_request_shortage(
@@ -1330,17 +2029,25 @@ def request_management():
                 )
             )
 
-            if shortage_after > 0:
+
+            if (
+                shortage_after > 0
+            ):
 
                 (
                     candidates,
+
                     replacement_start,
+
                     replacement_end
 
-                ) = find_replacement_candidates(
-                    conn,
-                    item
+                ) = (
+                    find_replacement_candidates(
+                        conn,
+                        item
+                    )
                 )
+
 
         result.append({
 
@@ -1353,10 +2060,14 @@ def request_management():
                 ],
 
             "name":
-                item["name"],
+                item[
+                    "name"
+                ],
 
             "shift_date":
-                item["shift_date"],
+                item[
+                    "shift_date"
+                ],
 
             "original_start_time":
                 item[
@@ -1384,13 +2095,19 @@ def request_management():
                 ],
 
             "reason":
-                item["reason"],
+                item[
+                    "reason"
+                ],
 
             "status":
-                item["status"],
+                item[
+                    "status"
+                ],
 
             "created_at":
-                item["created_at"],
+                item[
+                    "created_at"
+                ],
 
             "shortage_after":
                 shortage_after,
@@ -1405,7 +2122,9 @@ def request_management():
                 replacement_end
         })
 
+
     conn.close()
+
 
     return render_template(
         "requests.html",
@@ -1419,62 +2138,81 @@ def request_management():
 
 @app.route(
     "/requests/<int:request_id>/approve",
-    methods=["POST"]
+    methods=[
+        "POST"
+    ]
 )
 @login_required
 def approve_request(
     request_id
 ):
 
-    conn = get_db_connection()
+    conn = (
+        get_db_connection()
+    )
 
-    request_item = conn.execute("""
-        SELECT *
 
-        FROM shift_requests
+    request_item = (
+        conn.execute("""
+            SELECT *
 
-        WHERE
-            id = ?
-            AND
-            status = 'pending'
-    """, (
-        request_id,
-    )).fetchone()
+            FROM shift_requests
 
-    if request_item is None:
+            WHERE
+                id = ?
+
+                AND
+
+                status = 'pending'
+        """, (
+            request_id,
+        )).fetchone()
+    )
+
+
+    if (
+        request_item is None
+    ):
 
         conn.close()
 
         flash(
-            "申請が見つからないか、"
-            "すでに処理されています"
+            "申請が見つからないか、すでに処理されています"
         )
 
         return redirect(
             "/requests"
         )
 
+
     apply_shift_request(
         conn,
         request_item
     )
 
+
     conn.execute("""
         UPDATE shift_requests
 
-        SET status = 'approved'
+        SET
+            status = 'approved'
 
-        WHERE id = ?
+        WHERE
+            id = ?
     """, (
         request_id,
     ))
 
+
     conn.commit()
+
     conn.close()
+
 
     flash(
         "申請を承認しました"
     )
+
 
     return redirect(
         "/requests"
@@ -1482,12 +2220,14 @@ def approve_request(
 
 
 # ==================================================
-# 批准 + 自动安排替代员工
+# 批准 + 自动安排替代人员
 # ==================================================
 
 @app.route(
     "/requests/<int:request_id>/approve-replace/<int:staff_id>",
-    methods=["POST"]
+    methods=[
+        "POST"
+    ]
 )
 @login_required
 def approve_with_replacement(
@@ -1495,100 +2235,137 @@ def approve_with_replacement(
     staff_id
 ):
 
-    conn = get_db_connection()
+    conn = (
+        get_db_connection()
+    )
 
-    request_item = conn.execute("""
-        SELECT *
 
-        FROM shift_requests
+    request_item = (
+        conn.execute("""
+            SELECT *
 
-        WHERE
-            id = ?
-            AND
-            status = 'pending'
-    """, (
-        request_id,
-    )).fetchone()
+            FROM shift_requests
 
-    if request_item is None:
+            WHERE
+                id = ?
+
+                AND
+
+                status = 'pending'
+        """, (
+            request_id,
+        )).fetchone()
+    )
+
+
+    if (
+        request_item is None
+    ):
 
         conn.close()
 
         flash(
-            "申請が見つからないか、"
-            "すでに処理されています"
+            "申請が見つからないか、すでに処理されています"
         )
 
         return redirect(
             "/requests"
         )
 
+
     (
         candidates,
+
         target_start,
+
         target_end
 
-    ) = find_replacement_candidates(
-        conn,
-        request_item
+    ) = (
+        find_replacement_candidates(
+            conn,
+            request_item
+        )
     )
 
+
     candidate_ids = [
-        candidate["id"]
+
+        candidate[
+            "id"
+        ]
+
         for candidate
         in candidates
     ]
 
+
     if (
         staff_id
         not in candidate_ids
+
         or
+
         target_start is None
+
         or
+
         target_end is None
     ):
 
         conn.close()
 
         flash(
-            "このスタッフは現在、"
-            "代替候補として利用できません"
+            "このスタッフは現在、代替候補として利用できません"
         )
 
         return redirect(
             "/requests"
         )
 
-    replacement_staff = conn.execute("""
-        SELECT
-            id,
-            name
 
-        FROM staff
+    replacement_staff = (
+        conn.execute("""
+            SELECT
+                id,
+                name
 
-        WHERE id = ?
-    """, (
-        staff_id,
-    )).fetchone()
+            FROM staff
 
-    # 先应用原员工的申请
+            WHERE
+                id = ?
+        """, (
+            staff_id,
+        )).fetchone()
+    )
+
+
+    # 原员工申请生效
     apply_shift_request(
         conn,
         request_item
     )
 
-    # 再安排替代人员
+
+    # 替代员工排班
     conn.execute("""
         INSERT INTO shifts (
+
             employee_id,
+
             shift_date,
+
             start_time,
+
             end_time,
+
             source
         )
 
-        VALUES (?, ?, ?, ?, ?)
+        VALUES (
+            ?, ?, ?, ?, ?
+        )
     """, (
+
         staff_id,
 
         request_item[
@@ -1600,26 +2377,35 @@ def approve_with_replacement(
         target_end,
 
         "manual"
+
     ))
 
+
+    # 更新申请状态
     conn.execute("""
         UPDATE shift_requests
 
-        SET status = 'approved'
+        SET
+            status = 'approved'
 
-        WHERE id = ?
+        WHERE
+            id = ?
     """, (
         request_id,
     ))
 
+
     conn.commit()
+
     conn.close()
+
 
     flash(
         f"申請を承認し、"
         f"{replacement_staff['name']}さんを"
         f"代替スタッフとして配置しました"
     )
+
 
     return redirect(
         "/requests"
@@ -1632,34 +2418,46 @@ def approve_with_replacement(
 
 @app.route(
     "/requests/<int:request_id>/reject",
-    methods=["POST"]
+    methods=[
+        "POST"
+    ]
 )
 @login_required
 def reject_request(
     request_id
 ):
 
-    conn = get_db_connection()
+    conn = (
+        get_db_connection()
+    )
+
 
     conn.execute("""
         UPDATE shift_requests
 
-        SET status = 'rejected'
+        SET
+            status = 'rejected'
 
         WHERE
             id = ?
+
             AND
+
             status = 'pending'
     """, (
         request_id,
     ))
 
+
     conn.commit()
+
     conn.close()
+
 
     flash(
         "申請を却下しました"
     )
+
 
     return redirect(
         "/requests"
@@ -1670,247 +2468,412 @@ def reject_request(
 # Dashboard
 # ==================================================
 
-@app.route("/dashboard")
+@app.route(
+    "/dashboard"
+)
 @login_required
 def dashboard():
 
     today = date.today()
 
-    selected_month = request.args.get(
-        "month"
+
+    selected_month = (
+        request.args.get(
+            "month"
+        )
     )
+
 
     try:
 
-        if selected_month:
+        if (
+            selected_month
+        ):
 
-            target_date = datetime.strptime(
-                selected_month,
-                "%Y-%m"
-            ).date()
+            target_date = (
+                datetime.strptime(
+                    selected_month,
+                    "%Y-%m"
+                ).date()
+            )
 
         else:
 
             target_date = today
 
+
     except ValueError:
 
         target_date = today
 
-    month_start = target_date.replace(
-        day=1
+
+    month_start = (
+        target_date.replace(
+            day=1
+        )
     )
 
+
     next_month_start = (
+
         month_start
-        + timedelta(days=32)
+        + timedelta(
+            days=32
+        )
+
     ).replace(
         day=1
     )
+
 
     month_end = (
         next_month_start
-        - timedelta(days=1)
+        - timedelta(
+            days=1
+        )
     )
 
+
     previous_month = (
+
         month_start
-        - timedelta(days=1)
+        - timedelta(
+            days=1
+        )
+
     ).replace(
         day=1
     )
 
-    next_month = next_month_start
+
+    next_month = (
+        next_month_start
+    )
+
 
     month_start_text = (
         month_start.isoformat()
     )
 
+
     month_end_text = (
         month_end.isoformat()
     )
 
+
     alert_start = today
+
 
     alert_end = (
         today
-        + timedelta(days=59)
+        + timedelta(
+            days=59
+        )
     )
 
-    conn = get_db_connection()
 
-    total_staff = conn.execute("""
-        SELECT COUNT(*) AS count
-        FROM staff
-    """).fetchone()["count"]
+    conn = (
+        get_db_connection()
+    )
 
-    month_shift_count = conn.execute("""
-        SELECT COUNT(*) AS count
 
-        FROM shifts
+    # ==================================================
+    # 员工人数
+    # ==================================================
 
-        WHERE
-            shift_date >= ?
-            AND
-            shift_date <= ?
-    """, (
-        month_start_text,
-        month_end_text
-    )).fetchone()["count"]
+    total_staff = (
+        conn.execute("""
+            SELECT
+                COUNT(*) AS count
 
-    auto_shift_count = conn.execute("""
-        SELECT COUNT(*) AS count
+            FROM staff
+        """).fetchone()[
+            "count"
+        ]
+    )
 
-        FROM shifts
 
-        WHERE
-            shift_date >= ?
-            AND
-            shift_date <= ?
-            AND
-            source = 'auto'
-    """, (
-        month_start_text,
-        month_end_text
-    )).fetchone()["count"]
+    # ==================================================
+    # 月度班次数
+    # ==================================================
+
+    month_shift_count = (
+        conn.execute("""
+            SELECT
+                COUNT(*) AS count
+
+            FROM shifts
+
+            WHERE
+                shift_date >= ?
+
+                AND
+
+                shift_date <= ?
+        """, (
+
+            month_start_text,
+
+            month_end_text
+
+        )).fetchone()[
+            "count"
+        ]
+    )
+
+
+    # ==================================================
+    # 自动生成数
+    # ==================================================
+
+    auto_shift_count = (
+        conn.execute("""
+            SELECT
+                COUNT(*) AS count
+
+            FROM shifts
+
+            WHERE
+                shift_date >= ?
+
+                AND
+
+                shift_date <= ?
+
+                AND
+
+                source = 'auto'
+        """, (
+
+            month_start_text,
+
+            month_end_text
+
+        )).fetchone()[
+            "count"
+        ]
+    )
+
+
+    # ==================================================
+    # 待处理申请
+    # ==================================================
 
     pending_request_count = (
         conn.execute("""
-            SELECT COUNT(*) AS count
+            SELECT
+                COUNT(*) AS count
 
             FROM shift_requests
 
-            WHERE status = 'pending'
-        """).fetchone()["count"]
+            WHERE
+                status = 'pending'
+        """).fetchone()[
+            "count"
+        ]
     )
 
-    month_requirements = conn.execute("""
-        SELECT
-            work_date,
-            start_time,
-            end_time,
-            required_staff
 
-        FROM staffing_requirements
+    # ==================================================
+    # 当前月份缺员
+    # ==================================================
 
-        WHERE
-            work_date >= ?
-            AND
-            work_date <= ?
+    month_requirements = (
+        conn.execute("""
+            SELECT
+                work_date,
 
-        ORDER BY
-            work_date,
-            start_time
-    """, (
-        month_start_text,
-        month_end_text
-    )).fetchall()
+                start_time,
+
+                end_time,
+
+                required_staff
+
+            FROM staffing_requirements
+
+            WHERE
+                work_date >= ?
+
+                AND
+
+                work_date <= ?
+
+            ORDER BY
+                work_date,
+                start_time
+        """, (
+
+            month_start_text,
+
+            month_end_text
+
+        )).fetchall()
+    )
+
 
     month_shortage_count = 0
 
-    for requirement in month_requirements:
 
-        assigned_count = conn.execute("""
-            SELECT
-                COUNT(
-                    DISTINCT employee_id
-                ) AS count
+    for requirement in (
+        month_requirements
+    ):
 
-            FROM shifts
 
-            WHERE
-                shift_date = ?
-                AND
-                start_time <= ?
-                AND
-                end_time >= ?
-        """, (
-            requirement[
-                "work_date"
-            ],
+        assigned_count = (
+            conn.execute("""
+                SELECT
+                    COUNT(
+                        DISTINCT employee_id
+                    ) AS count
 
-            requirement[
-                "start_time"
-            ],
+                FROM shifts
 
-            requirement[
-                "end_time"
+                WHERE
+                    shift_date = ?
+
+                    AND
+
+                    start_time <= ?
+
+                    AND
+
+                    end_time >= ?
+            """, (
+
+                requirement[
+                    "work_date"
+                ],
+
+                requirement[
+                    "start_time"
+                ],
+
+                requirement[
+                    "end_time"
+                ]
+
+            )).fetchone()[
+                "count"
             ]
-        )).fetchone()["count"]
+        )
+
 
         shortage = (
+
             requirement[
                 "required_staff"
             ]
+
             - assigned_count
         )
 
-        if shortage > 0:
 
-            month_shortage_count += shortage
+        if (
+            shortage > 0
+        ):
 
-    future_requirements = conn.execute("""
-        SELECT
-            work_date,
-            start_time,
-            end_time,
-            required_staff
+            month_shortage_count += (
+                shortage
+            )
 
-        FROM staffing_requirements
 
-        WHERE
-            work_date >= ?
-            AND
-            work_date <= ?
+    # ==================================================
+    # 未来60天缺员
+    # ==================================================
 
-        ORDER BY
-            work_date,
-            start_time
-    """, (
-        alert_start.isoformat(),
-        alert_end.isoformat()
-    )).fetchall()
+    future_requirements = (
+        conn.execute("""
+            SELECT
+                work_date,
+
+                start_time,
+
+                end_time,
+
+                required_staff
+
+            FROM staffing_requirements
+
+            WHERE
+                work_date >= ?
+
+                AND
+
+                work_date <= ?
+
+            ORDER BY
+                work_date,
+                start_time
+        """, (
+
+            alert_start.isoformat(),
+
+            alert_end.isoformat()
+
+        )).fetchall()
+    )
+
 
     shortage_alerts = []
 
-    for requirement in future_requirements:
 
-        assigned_count = conn.execute("""
-            SELECT
-                COUNT(
-                    DISTINCT employee_id
-                ) AS count
+    for requirement in (
+        future_requirements
+    ):
 
-            FROM shifts
 
-            WHERE
-                shift_date = ?
-                AND
-                start_time <= ?
-                AND
-                end_time >= ?
-        """, (
-            requirement[
-                "work_date"
-            ],
+        assigned_count = (
+            conn.execute("""
+                SELECT
+                    COUNT(
+                        DISTINCT employee_id
+                    ) AS count
 
-            requirement[
-                "start_time"
-            ],
+                FROM shifts
 
-            requirement[
-                "end_time"
+                WHERE
+                    shift_date = ?
+
+                    AND
+
+                    start_time <= ?
+
+                    AND
+
+                    end_time >= ?
+            """, (
+
+                requirement[
+                    "work_date"
+                ],
+
+                requirement[
+                    "start_time"
+                ],
+
+                requirement[
+                    "end_time"
+                ]
+
+            )).fetchone()[
+                "count"
             ]
-        )).fetchone()["count"]
+        )
+
 
         shortage = (
+
             requirement[
                 "required_staff"
             ]
+
             - assigned_count
         )
 
-        if shortage > 0:
+
+        if (
+            shortage > 0
+        ):
 
             shortage_alerts.append({
 
@@ -1941,47 +2904,70 @@ def dashboard():
                     shortage
             })
 
+
     future_shortage_count = sum(
-        item["shortage"]
+
+        item[
+            "shortage"
+        ]
+
         for item
         in shortage_alerts
     )
 
-    upcoming_shifts = conn.execute("""
-        SELECT
-            staff.name,
-            shifts.shift_date,
-            shifts.start_time,
-            shifts.end_time,
-            shifts.source
 
-        FROM shifts
+    # ==================================================
+    # 未来排班
+    # ==================================================
 
-        JOIN staff
+    upcoming_shifts = (
+        conn.execute("""
+            SELECT
+                staff.name,
 
-        ON
-            shifts.employee_id
-            = staff.id
+                shifts.shift_date,
 
-        WHERE
-            shifts.shift_date >= ?
+                shifts.start_time,
 
-        ORDER BY
-            shifts.shift_date,
-            shifts.start_time,
-            staff.name
+                shifts.end_time,
 
-        LIMIT 12
-    """, (
-        today.isoformat(),
-    )).fetchall()
+                shifts.source
+
+            FROM shifts
+
+            JOIN staff
+
+            ON
+                shifts.employee_id
+                = staff.id
+
+            WHERE
+                shifts.shift_date >= ?
+
+            ORDER BY
+                shifts.shift_date,
+
+                shifts.start_time,
+
+                staff.name
+
+            LIMIT 12
+        """, (
+            today.isoformat(),
+        )).fetchall()
+    )
+
 
     conn.close()
 
+
     return render_template(
+
         "dashboard.html",
 
-        total_staff=total_staff,
+        total_staff=(
+            total_staff
+        ),
 
         month_shift_count=(
             month_shift_count
@@ -2045,35 +3031,62 @@ def dashboard():
 
 @app.route(
     "/",
-    methods=["GET", "POST"]
+    methods=[
+        "GET",
+        "POST"
+    ]
 )
 @login_required
 def home():
 
-    conn = get_db_connection()
+    conn = (
+        get_db_connection()
+    )
 
-    if request.method == "POST":
 
-        employee_id = request.form[
-            "employee_id"
-        ]
+    if (
+        request.method
+        == "POST"
+    ):
 
-        shift_date = request.form[
-            "shift_date"
-        ]
+        employee_id = (
+            request.form[
+                "employee_id"
+            ]
+        )
 
-        start_time = request.form[
-            "start_time"
-        ]
 
-        end_time = request.form[
-            "end_time"
-        ]
+        shift_date = (
+            request.form[
+                "shift_date"
+            ]
+        )
+
+
+        start_time = (
+            request.form[
+                "start_time"
+            ]
+        )
+
+
+        end_time = (
+            request.form[
+                "end_time"
+            ]
+        )
+
 
         if (
-            time_to_minutes(end_time)
+            time_to_minutes(
+                end_time
+            )
+
             <=
-            time_to_minutes(start_time)
+
+            time_to_minutes(
+                start_time
+            )
         ):
 
             flash(
@@ -2082,29 +3095,53 @@ def home():
 
             conn.close()
 
-            return redirect("/")
+            return redirect(
+                "/"
+            )
 
-        conflict = conn.execute("""
-            SELECT id
 
-            FROM shifts
+        # ==================================================
+        # 时间重叠检查
+        # ==================================================
 
-            WHERE
-                employee_id = ?
-                AND
-                shift_date = ?
-                AND
-                start_time < ?
-                AND
-                end_time > ?
-        """, (
-            employee_id,
-            shift_date,
-            end_time,
-            start_time
-        )).fetchone()
+        conflict = (
+            conn.execute("""
+                SELECT
+                    id
 
-        if conflict is not None:
+                FROM shifts
+
+                WHERE
+                    employee_id = ?
+
+                    AND
+
+                    shift_date = ?
+
+                    AND
+
+                    start_time < ?
+
+                    AND
+
+                    end_time > ?
+            """, (
+
+                employee_id,
+
+                shift_date,
+
+                end_time,
+
+                start_time
+
+            )).fetchone()
+        )
+
+
+        if (
+            conflict is not None
+        ):
 
             flash(
                 "このスタッフは同じ時間帯にすでにシフトがあります"
@@ -2112,69 +3149,115 @@ def home():
 
             conn.close()
 
-            return redirect("/")
+            return redirect(
+                "/"
+            )
+
 
         conn.execute("""
             INSERT INTO shifts (
+
                 employee_id,
+
                 shift_date,
+
                 start_time,
+
                 end_time,
+
                 source
             )
 
-            VALUES (?, ?, ?, ?, ?)
+            VALUES (
+                ?, ?, ?, ?, ?
+            )
         """, (
+
             employee_id,
+
             shift_date,
+
             start_time,
+
             end_time,
+
             "manual"
+
         ))
 
+
         conn.commit()
+
         conn.close()
 
-        return redirect("/")
 
-    staff_list = conn.execute("""
-        SELECT
-            id,
-            name
+        return redirect(
+            "/"
+        )
 
-        FROM staff
 
-        ORDER BY name
-    """).fetchall()
+    staff_list = (
+        conn.execute("""
+            SELECT
+                id,
+                name
 
-    employees = conn.execute("""
-        SELECT
-            shifts.id AS id,
-            staff.name AS name,
-            shifts.shift_date AS shift_date,
-            shifts.start_time AS start_time,
-            shifts.end_time AS end_time,
-            shifts.source AS source
+            FROM staff
 
-        FROM shifts
+            ORDER BY
+                name
+        """).fetchall()
+    )
 
-        JOIN staff
 
-        ON
-            shifts.employee_id
-            = staff.id
+    employees = (
+        conn.execute("""
+            SELECT
+                shifts.id
+                AS id,
 
-        ORDER BY
-            shifts.shift_date,
-            shifts.start_time,
-            staff.name
-    """).fetchall()
+                staff.name
+                AS name,
+
+                shifts.shift_date
+                AS shift_date,
+
+                shifts.start_time
+                AS start_time,
+
+                shifts.end_time
+                AS end_time,
+
+                shifts.source
+                AS source
+
+            FROM shifts
+
+            JOIN staff
+
+            ON
+                shifts.employee_id
+                = staff.id
+
+            ORDER BY
+                shifts.shift_date,
+
+                shifts.start_time,
+
+                staff.name
+        """).fetchall()
+    )
+
 
     conn.close()
 
+
     return render_template(
+
         "index.html",
+
         employees=employees,
+
         staff_list=staff_list
     )
 
@@ -2183,17 +3266,24 @@ def home():
 # 周排班
 # ==================================================
 
-@app.route("/weekly")
+@app.route(
+    "/weekly"
+)
 @login_required
 def weekly():
 
-    selected_date = request.args.get(
-        "date"
+    selected_date = (
+        request.args.get(
+            "date"
+        )
     )
+
 
     try:
 
-        if selected_date:
+        if (
+            selected_date
+        ):
 
             target_date = (
                 datetime.strptime(
@@ -2204,23 +3294,41 @@ def weekly():
 
         else:
 
-            target_date = date.today()
+            target_date = (
+                date.today()
+            )
+
 
     except ValueError:
 
-        target_date = date.today()
+        target_date = (
+            date.today()
+        )
+
 
     monday = (
+
         target_date
+
         - timedelta(
-            days=target_date.weekday()
+            days=(
+                target_date.weekday()
+            )
         )
     )
 
+
     week_dates = [
-        monday + timedelta(days=i)
-        for i in range(7)
+
+        monday
+        + timedelta(
+            days=i
+        )
+
+        for i
+        in range(7)
     ]
+
 
     japanese_weekdays = [
         "月",
@@ -2232,9 +3340,14 @@ def weekly():
         "日"
     ]
 
+
     week_days = []
 
-    for index, day in enumerate(
+
+    for (
+        index,
+        day
+    ) in enumerate(
         week_dates
     ):
 
@@ -2245,88 +3358,145 @@ def weekly():
 
             "label":
                 (
-                    f"{day.month}/{day.day}"
-                    f"（{japanese_weekdays[index]}）"
+                    f"{day.month}/"
+                    f"{day.day}"
+                    f"（"
+                    f"{japanese_weekdays[index]}"
+                    f"）"
                 )
         })
 
+
     start_date = (
-        week_dates[0].isoformat()
+        week_dates[
+            0
+        ].isoformat()
     )
+
 
     end_date = (
-        week_dates[-1].isoformat()
+        week_dates[
+            -1
+        ].isoformat()
     )
 
-    conn = get_db_connection()
 
-    staff_list = conn.execute("""
-        SELECT
-            id,
-            name
+    conn = (
+        get_db_connection()
+    )
 
-        FROM staff
 
-        ORDER BY id
-    """).fetchall()
+    staff_list = (
+        conn.execute("""
+            SELECT
+                id,
+                name
 
-    shift_list = conn.execute("""
-        SELECT
-            id,
-            employee_id,
-            shift_date,
-            start_time,
-            end_time,
-            source
+            FROM staff
 
-        FROM shifts
+            ORDER BY
+                id
+        """).fetchall()
+    )
 
-        WHERE
-            shift_date >= ?
-            AND
-            shift_date <= ?
 
-        ORDER BY
-            shift_date,
-            start_time
-    """, (
-        start_date,
-        end_date
-    )).fetchall()
+    shift_list = (
+        conn.execute("""
+            SELECT
+                id,
+
+                employee_id,
+
+                shift_date,
+
+                start_time,
+
+                end_time,
+
+                source
+
+            FROM shifts
+
+            WHERE
+                shift_date >= ?
+
+                AND
+
+                shift_date <= ?
+
+            ORDER BY
+                shift_date,
+                start_time
+        """, (
+
+            start_date,
+
+            end_date
+
+        )).fetchall()
+    )
+
 
     conn.close()
 
+
     schedule = {}
 
-    for staff in staff_list:
+
+    for staff in (
+        staff_list
+    ):
 
         schedule[
-            staff["id"]
+            staff[
+                "id"
+            ]
         ] = {}
 
-        for day in week_days:
+
+        for day in (
+            week_days
+        ):
 
             schedule[
-                staff["id"]
+                staff[
+                    "id"
+                ]
             ][
-                day["iso"]
+                day[
+                    "iso"
+                ]
             ] = []
 
-    for shift in shift_list:
 
-        employee_id = shift[
-            "employee_id"
-        ]
+    for shift in (
+        shift_list
+    ):
 
-        shift_date = shift[
-            "shift_date"
-        ]
+        employee_id = (
+            shift[
+                "employee_id"
+            ]
+        )
+
+
+        shift_date = (
+            shift[
+                "shift_date"
+            ]
+        )
+
 
         if (
-            employee_id in schedule
+            employee_id
+            in schedule
+
             and
+
             shift_date
-            in schedule[employee_id]
+            in schedule[
+                employee_id
+            ]
         ):
 
             schedule[
@@ -2336,44 +3506,78 @@ def weekly():
             ].append({
 
                 "id":
-                    shift["id"],
+                    shift[
+                        "id"
+                    ],
 
                 "start_time":
-                    shift["start_time"],
+                    shift[
+                        "start_time"
+                    ],
 
                 "end_time":
-                    shift["end_time"],
+                    shift[
+                        "end_time"
+                    ],
 
                 "source":
-                    shift["source"]
+                    shift[
+                        "source"
+                    ]
             })
 
+
     previous_week = (
+
         monday
-        - timedelta(days=7)
+        - timedelta(
+            days=7
+        )
+
     ).isoformat()
+
 
     next_week = (
+
         monday
-        + timedelta(days=7)
+        + timedelta(
+            days=7
+        )
+
     ).isoformat()
 
+
     return render_template(
+
         "weekly.html",
 
-        staff_list=staff_list,
+        staff_list=(
+            staff_list
+        ),
 
-        week_days=week_days,
+        week_days=(
+            week_days
+        ),
 
-        schedule=schedule,
+        schedule=(
+            schedule
+        ),
 
-        start_date=start_date,
+        start_date=(
+            start_date
+        ),
 
-        end_date=end_date,
+        end_date=(
+            end_date
+        ),
 
-        previous_week=previous_week,
+        previous_week=(
+            previous_week
+        ),
 
-        next_week=next_week
+        next_week=(
+            next_week
+        )
     )
 
 
@@ -2383,28 +3587,41 @@ def weekly():
 
 @app.route(
     "/auto-generate",
-    methods=["POST"]
+    methods=[
+        "POST"
+    ]
 )
 @login_required
 def auto_generate():
 
-    conn = get_db_connection()
+    conn = (
+        get_db_connection()
+    )
 
-    requirements = conn.execute("""
-        SELECT
-            work_date,
-            start_time,
-            end_time,
-            required_staff
 
-        FROM staffing_requirements
+    requirements = (
+        conn.execute("""
+            SELECT
+                work_date,
 
-        ORDER BY
-            work_date,
-            start_time
-    """).fetchall()
+                start_time,
 
-    if not requirements:
+                end_time,
+
+                required_staff
+
+            FROM staffing_requirements
+
+            ORDER BY
+                work_date,
+                start_time
+        """).fetchall()
+    )
+
+
+    if (
+        not requirements
+    ):
 
         conn.close()
 
@@ -2413,179 +3630,291 @@ def auto_generate():
             "先に必要人数設定を行ってください。"
         )
 
-        return redirect("/")
+        return redirect(
+            "/"
+        )
+
 
     generated_count = 0
+
     shortage_count = 0
+
     no_candidate_count = 0
 
-    for requirement in requirements:
 
-        work_date = requirement[
-            "work_date"
-        ]
+    for requirement in (
+        requirements
+    ):
 
-        start_time = requirement[
-            "start_time"
-        ]
 
-        end_time = requirement[
-            "end_time"
-        ]
+        work_date = (
+            requirement[
+                "work_date"
+            ]
+        )
 
-        required_staff = requirement[
-            "required_staff"
-        ]
+
+        start_time = (
+            requirement[
+                "start_time"
+            ]
+        )
+
+
+        end_time = (
+            requirement[
+                "end_time"
+            ]
+        )
+
+
+        required_staff = (
+            requirement[
+                "required_staff"
+            ]
+        )
+
 
         duration = (
-            time_to_minutes(end_time)
+
+            time_to_minutes(
+                end_time
+            )
+
             -
-            time_to_minutes(start_time)
+
+            time_to_minutes(
+                start_time
+            )
         )
+
 
         if (
             duration <= 0
-            or duration > 480
+
+            or
+
+            duration > 480
         ):
+
             continue
 
-        existing_count = conn.execute("""
-            SELECT
-                COUNT(
-                    DISTINCT employee_id
-                ) AS count
 
-            FROM shifts
+        existing_count = (
+            conn.execute("""
+                SELECT
+                    COUNT(
+                        DISTINCT employee_id
+                    ) AS count
 
-            WHERE
-                shift_date = ?
-                AND
-                start_time <= ?
-                AND
-                end_time >= ?
-        """, (
-            work_date,
-            start_time,
-            end_time
-        )).fetchone()["count"]
+                FROM shifts
+
+                WHERE
+                    shift_date = ?
+
+                    AND
+
+                    start_time <= ?
+
+                    AND
+
+                    end_time >= ?
+            """, (
+
+                work_date,
+
+                start_time,
+
+                end_time
+
+            )).fetchone()[
+                "count"
+            ]
+        )
+
 
         needed = (
+
             required_staff
+
             - existing_count
         )
 
-        if needed <= 0:
+
+        if (
+            needed <= 0
+        ):
+
             continue
 
-        candidates = conn.execute("""
-            SELECT
-                staff.id,
-                staff.name,
 
-                (
-                    SELECT COUNT(*)
+        candidates = (
+            conn.execute("""
+                SELECT
+                    staff.id,
 
-                    FROM shifts
-                    AS total_shifts
+                    staff.name,
 
-                    WHERE
-                        total_shifts.employee_id
-                        = staff.id
-                ) AS shift_count
+                    (
+                        SELECT
+                            COUNT(*)
 
-            FROM staff
+                        FROM shifts
+                        AS total_shifts
 
-            JOIN availability
+                        WHERE
+                            total_shifts.employee_id
+                            = staff.id
 
-            ON
-                availability.employee_id
-                = staff.id
+                    ) AS shift_count
 
-            WHERE
-                availability.work_date = ?
+                FROM staff
 
-                AND
-                availability.preference_type
-                = 'available'
+                JOIN availability
 
-                AND
-                availability.start_time
-                <= ?
+                ON
+                    availability.employee_id
+                    = staff.id
 
-                AND
-                availability.end_time
-                >= ?
+                WHERE
+                    availability.work_date
+                    = ?
 
-                AND NOT EXISTS (
+                    AND
 
-                    SELECT 1
+                    availability.preference_type
+                    = 'available'
 
-                    FROM shifts
-                    AS same_day_shift
+                    AND
 
-                    WHERE
-                        same_day_shift.employee_id
-                        = staff.id
+                    availability.start_time
+                    <= ?
 
-                        AND
-                        same_day_shift.shift_date
-                        = ?
-                )
+                    AND
 
-            ORDER BY
-                shift_count ASC,
-                staff.id ASC
-        """, (
-            work_date,
-            start_time,
-            end_time,
-            work_date
-        )).fetchall()
+                    availability.end_time
+                    >= ?
 
-        if not candidates:
+                    AND NOT EXISTS (
+
+                        SELECT 1
+
+                        FROM shifts
+                        AS same_day_shift
+
+                        WHERE
+                            same_day_shift.employee_id
+                            = staff.id
+
+                            AND
+
+                            same_day_shift.shift_date
+                            = ?
+                    )
+
+                ORDER BY
+                    shift_count ASC,
+
+                    staff.id ASC
+            """, (
+
+                work_date,
+
+                start_time,
+
+                end_time,
+
+                work_date
+
+            )).fetchall()
+        )
+
+
+        if (
+            not candidates
+        ):
 
             no_candidate_count += 1
-            shortage_count += needed
+
+            shortage_count += (
+                needed
+            )
 
             continue
 
-        selected = candidates[:needed]
 
-        for staff in selected:
+        selected = (
+            candidates[
+                :needed
+            ]
+        )
+
+
+        for staff in (
+            selected
+        ):
 
             conn.execute("""
                 INSERT INTO shifts (
+
                     employee_id,
+
                     shift_date,
+
                     start_time,
+
                     end_time,
+
                     source
                 )
 
-                VALUES (?, ?, ?, ?, ?)
+                VALUES (
+                    ?, ?, ?, ?, ?
+                )
             """, (
-                staff["id"],
+
+                staff[
+                    "id"
+                ],
+
                 work_date,
+
                 start_time,
+
                 end_time,
+
                 "auto"
+
             ))
+
 
             generated_count += 1
 
-        if len(selected) < needed:
+
+        if (
+            len(selected)
+            < needed
+        ):
 
             shortage_count += (
+
                 needed
                 - len(selected)
             )
 
+
     conn.commit()
+
     conn.close()
 
-    if generated_count > 0:
 
-        if shortage_count > 0:
+    if (
+        generated_count > 0
+    ):
+
+        if (
+            shortage_count > 0
+        ):
 
             flash(
                 f"自動シフトを"
@@ -2601,12 +3930,16 @@ def auto_generate():
                 f"{generated_count}件作成しました。"
             )
 
-    elif no_candidate_count > 0:
+
+    elif (
+        no_candidate_count > 0
+    ):
 
         flash(
             "条件に合う勤務可能スタッフがいません。"
             "勤務希望を確認してください。"
         )
+
 
     else:
 
@@ -2614,41 +3947,67 @@ def auto_generate():
             "必要人数はすでに満たされています。"
         )
 
-    return redirect("/")
 
+    return redirect(
+        "/"
+    )
+
+
+# ==================================================
+# 自动排班清除
+# ==================================================
 
 @app.route(
     "/auto-clear",
-    methods=["POST"]
+    methods=[
+        "POST"
+    ]
 )
 @login_required
 def auto_clear():
 
-    conn = get_db_connection()
+    conn = (
+        get_db_connection()
+    )
 
-    deleted_count = conn.execute("""
-        SELECT COUNT(*) AS count
 
-        FROM shifts
+    deleted_count = (
+        conn.execute("""
+            SELECT
+                COUNT(*) AS count
 
-        WHERE source = 'auto'
-    """).fetchone()["count"]
+            FROM shifts
+
+            WHERE
+                source = 'auto'
+        """).fetchone()[
+            "count"
+        ]
+    )
+
 
     conn.execute("""
         DELETE FROM shifts
 
-        WHERE source = 'auto'
+        WHERE
+            source = 'auto'
     """)
 
+
     conn.commit()
+
     conn.close()
+
 
     flash(
         f"自動作成シフトを"
         f"{deleted_count}件削除しました"
     )
 
-    return redirect("/")
+
+    return redirect(
+        "/"
+    )
 
 
 # ==================================================
@@ -2659,22 +4018,33 @@ def auto_clear():
     "/delete/<int:shift_id>"
 )
 @login_required
-def delete(shift_id):
+def delete(
+    shift_id
+):
 
-    conn = get_db_connection()
+    conn = (
+        get_db_connection()
+    )
+
 
     conn.execute("""
         DELETE FROM shifts
 
-        WHERE id = ?
+        WHERE
+            id = ?
     """, (
         shift_id,
     ))
 
+
     conn.commit()
+
     conn.close()
 
-    return redirect("/")
+
+    return redirect(
+        "/"
+    )
 
 
 # ==================================================
@@ -2683,33 +4053,64 @@ def delete(shift_id):
 
 @app.route(
     "/edit/<int:shift_id>",
-    methods=["GET", "POST"]
+    methods=[
+        "GET",
+        "POST"
+    ]
 )
 @login_required
-def edit(shift_id):
+def edit(
+    shift_id
+):
 
-    conn = get_db_connection()
+    conn = (
+        get_db_connection()
+    )
 
-    if request.method == "POST":
 
-        name = request.form["name"]
+    if (
+        request.method
+        == "POST"
+    ):
 
-        shift_date = request.form[
-            "shift_date"
-        ]
+        name = (
+            request.form[
+                "name"
+            ]
+        )
 
-        start_time = request.form[
-            "start_time"
-        ]
 
-        end_time = request.form[
-            "end_time"
-        ]
+        shift_date = (
+            request.form[
+                "shift_date"
+            ]
+        )
+
+
+        start_time = (
+            request.form[
+                "start_time"
+            ]
+        )
+
+
+        end_time = (
+            request.form[
+                "end_time"
+            ]
+        )
+
 
         if (
-            time_to_minutes(end_time)
+            time_to_minutes(
+                end_time
+            )
+
             <=
-            time_to_minutes(start_time)
+
+            time_to_minutes(
+                start_time
+            )
         ):
 
             flash(
@@ -2722,17 +4123,25 @@ def edit(shift_id):
                 f"/edit/{shift_id}"
             )
 
-        staff = conn.execute("""
-            SELECT id
 
-            FROM staff
+        staff = (
+            conn.execute("""
+                SELECT
+                    id
 
-            WHERE name = ?
-        """, (
-            name,
-        )).fetchone()
+                FROM staff
 
-        if staff is None:
+                WHERE
+                    name = ?
+            """, (
+                name,
+            )).fetchone()
+        )
+
+
+        if (
+            staff is None
+        ):
 
             password_hash = (
                 generate_password_hash(
@@ -2741,76 +4150,125 @@ def edit(shift_id):
                 )
             )
 
-            cursor = conn.execute("""
-                INSERT INTO staff (
-                    name,
-                    password_hash
-                )
 
-                VALUES (?, ?)
-            """, (
-                name,
-                password_hash
-            ))
+            cursor = (
+                conn.execute("""
+                    INSERT INTO staff (
+                        name,
+                        password_hash
+                    )
+
+                    VALUES (
+                        ?, ?
+                    )
+                """, (
+
+                    name,
+
+                    password_hash
+
+                ))
+            )
+
 
             employee_id = (
                 cursor.lastrowid
             )
 
+
         else:
 
-            employee_id = staff[
-                "id"
-            ]
+            employee_id = (
+                staff[
+                    "id"
+                ]
+            )
+
 
         conn.execute("""
             UPDATE shifts
 
             SET
                 employee_id = ?,
+
                 shift_date = ?,
+
                 start_time = ?,
+
                 end_time = ?
 
-            WHERE id = ?
+            WHERE
+                id = ?
         """, (
+
             employee_id,
+
             shift_date,
+
             start_time,
+
             end_time,
+
             shift_id
+
         ))
 
+
         conn.commit()
+
         conn.close()
 
-        return redirect("/")
 
-    emp = conn.execute("""
-        SELECT
-            shifts.id AS id,
-            staff.name AS name,
-            shifts.shift_date AS shift_date,
-            shifts.start_time AS start_time,
-            shifts.end_time AS end_time
+        return redirect(
+            "/"
+        )
 
-        FROM shifts
 
-        JOIN staff
+    emp = (
+        conn.execute("""
+            SELECT
+                shifts.id
+                AS id,
 
-        ON
-            shifts.employee_id
-            = staff.id
+                staff.name
+                AS name,
 
-        WHERE shifts.id = ?
-    """, (
-        shift_id,
-    )).fetchone()
+                shifts.shift_date
+                AS shift_date,
+
+                shifts.start_time
+                AS start_time,
+
+                shifts.end_time
+                AS end_time
+
+            FROM shifts
+
+            JOIN staff
+
+            ON
+                shifts.employee_id
+                = staff.id
+
+            WHERE
+                shifts.id = ?
+        """, (
+            shift_id,
+        )).fetchone()
+    )
+
 
     conn.close()
 
-    if emp is None:
-        return redirect("/")
+
+    if (
+        emp is None
+    ):
+
+        return redirect(
+            "/"
+        )
+
 
     return render_template(
         "edit.html",
@@ -2824,32 +4282,54 @@ def edit(shift_id):
 
 @app.route(
     "/staff",
-    methods=["GET", "POST"]
+    methods=[
+        "GET",
+        "POST"
+    ]
 )
 @login_required
 def staff_management():
 
-    conn = get_db_connection()
+    conn = (
+        get_db_connection()
+    )
 
-    if request.method == "POST":
 
-        name = request.form[
-            "name"
-        ].strip()
+    if (
+        request.method
+        == "POST"
+    ):
 
-        if name:
+        name = (
+            request.form[
+                "name"
+            ].strip()
+        )
 
-            existing_staff = conn.execute("""
-                SELECT id
 
-                FROM staff
+        if (
+            name
+        ):
 
-                WHERE name = ?
-            """, (
-                name,
-            )).fetchone()
+            existing_staff = (
+                conn.execute("""
+                    SELECT
+                        id
 
-            if existing_staff is None:
+                    FROM staff
+
+                    WHERE
+                        name = ?
+                """, (
+                    name,
+                )).fetchone()
+            )
+
+
+            if (
+                existing_staff
+                is None
+            ):
 
                 password_hash = (
                     generate_password_hash(
@@ -2858,24 +4338,33 @@ def staff_management():
                     )
                 )
 
+
                 conn.execute("""
                     INSERT INTO staff (
                         name,
                         password_hash
                     )
 
-                    VALUES (?, ?)
+                    VALUES (
+                        ?, ?
+                    )
                 """, (
+
                     name,
+
                     password_hash
+
                 ))
 
+
                 conn.commit()
+
 
                 flash(
                     "スタッフを追加しました。"
                     "初期PINは1234です。"
                 )
+
 
             else:
 
@@ -2883,81 +4372,123 @@ def staff_management():
                     "同じ名前のスタッフが既に登録されています"
                 )
 
+
         conn.close()
+
 
         return redirect(
             "/staff"
         )
 
-    staff_list = conn.execute("""
-        SELECT
-            staff.id,
-            staff.name,
 
-            (
-                SELECT COUNT(*)
+    staff_list = (
+        conn.execute("""
+            SELECT
+                staff.id,
 
-                FROM shifts
+                staff.name,
 
-                WHERE
-                    shifts.employee_id
-                    = staff.id
-            ) AS shift_count,
+                (
+                    SELECT
+                        COUNT(*)
 
-            (
-                SELECT COUNT(*)
+                    FROM shifts
 
-                FROM availability
+                    WHERE
+                        shifts.employee_id
+                        = staff.id
 
-                WHERE
-                    availability.employee_id
-                    = staff.id
-            ) AS availability_count
+                ) AS shift_count,
 
-        FROM staff
+                (
+                    SELECT
+                        COUNT(*)
 
-        ORDER BY staff.id
-    """).fetchall()
+                    FROM availability
+
+                    WHERE
+                        availability.employee_id
+                        = staff.id
+
+                ) AS availability_count
+
+            FROM staff
+
+            ORDER BY
+                staff.id
+        """).fetchall()
+    )
+
 
     conn.close()
 
+
     return render_template(
+
         "staff.html",
-        staff_list=staff_list
+
+        staff_list=(
+            staff_list
+        )
     )
 
+
+# ==================================================
+# 删除员工
+# ==================================================
 
 @app.route(
     "/staff/delete/<int:staff_id>"
 )
 @login_required
-def delete_staff(staff_id):
+def delete_staff(
+    staff_id
+):
 
-    conn = get_db_connection()
+    conn = (
+        get_db_connection()
+    )
 
-    shift_count = conn.execute("""
-        SELECT COUNT(*) AS count
 
-        FROM shifts
+    shift_count = (
+        conn.execute("""
+            SELECT
+                COUNT(*) AS count
 
-        WHERE employee_id = ?
-    """, (
-        staff_id,
-    )).fetchone()["count"]
+            FROM shifts
 
-    availability_count = conn.execute("""
-        SELECT COUNT(*) AS count
+            WHERE
+                employee_id = ?
+        """, (
+            staff_id,
+        )).fetchone()[
+            "count"
+        ]
+    )
 
-        FROM availability
 
-        WHERE employee_id = ?
-    """, (
-        staff_id,
-    )).fetchone()["count"]
+    availability_count = (
+        conn.execute("""
+            SELECT
+                COUNT(*) AS count
+
+            FROM availability
+
+            WHERE
+                employee_id = ?
+        """, (
+            staff_id,
+        )).fetchone()[
+            "count"
+        ]
+    )
+
 
     if (
         shift_count > 0
+
         or
+
         availability_count > 0
     ):
 
@@ -2971,20 +4502,26 @@ def delete_staff(staff_id):
             "/staff"
         )
 
+
     conn.execute("""
         DELETE FROM staff
 
-        WHERE id = ?
+        WHERE
+            id = ?
     """, (
         staff_id,
     ))
 
+
     conn.commit()
+
     conn.close()
+
 
     flash(
         "スタッフを削除しました"
     )
+
 
     return redirect(
         "/staff"
@@ -2992,31 +4529,45 @@ def delete_staff(staff_id):
 
 
 # ==================================================
-# 勤务希望
+# 勤務希望
 # ==================================================
 
 @app.route(
     "/availability/<int:staff_id>",
-    methods=["GET", "POST"]
+    methods=[
+        "GET",
+        "POST"
+    ]
 )
 @login_required
-def availability(staff_id):
+def availability(
+    staff_id
+):
 
-    conn = get_db_connection()
+    conn = (
+        get_db_connection()
+    )
 
-    staff = conn.execute("""
-        SELECT
-            id,
-            name
 
-        FROM staff
+    staff = (
+        conn.execute("""
+            SELECT
+                id,
+                name
 
-        WHERE id = ?
-    """, (
-        staff_id,
-    )).fetchone()
+            FROM staff
 
-    if staff is None:
+            WHERE
+                id = ?
+        """, (
+            staff_id,
+        )).fetchone()
+    )
+
+
+    if (
+        staff is None
+    ):
 
         conn.close()
 
@@ -3024,36 +4575,60 @@ def availability(staff_id):
             "/staff"
         )
 
-    if request.method == "POST":
 
-        work_date = request.form[
-            "work_date"
-        ]
+    if (
+        request.method
+        == "POST"
+    ):
 
-        preference_type = request.form[
-            "preference_type"
-        ]
-
-        start_time = request.form.get(
-            "start_time",
-            ""
+        work_date = (
+            request.form[
+                "work_date"
+            ]
         )
 
-        end_time = request.form.get(
-            "end_time",
-            ""
+
+        preference_type = (
+            request.form[
+                "preference_type"
+            ]
         )
 
-        if preference_type == "off":
+
+        start_time = (
+            request.form.get(
+                "start_time",
+                ""
+            )
+        )
+
+
+        end_time = (
+            request.form.get(
+                "end_time",
+                ""
+            )
+        )
+
+
+        if (
+            preference_type
+            == "off"
+        ):
 
             start_time = None
+
             end_time = None
+
 
         else:
 
             if (
                 not start_time
-                or not end_time
+
+                or
+
+                not end_time
             ):
 
                 flash(
@@ -3066,10 +4641,17 @@ def availability(staff_id):
                     f"/availability/{staff_id}"
                 )
 
+
             if (
-                time_to_minutes(end_time)
+                time_to_minutes(
+                    end_time
+                )
+
                 <=
-                time_to_minutes(start_time)
+
+                time_to_minutes(
+                    start_time
+                )
             ):
 
                 flash(
@@ -3082,16 +4664,24 @@ def availability(staff_id):
                     f"/availability/{staff_id}"
                 )
 
+
         conn.execute("""
             INSERT INTO availability (
+
                 employee_id,
+
                 work_date,
+
                 preference_type,
+
                 start_time,
+
                 end_time
             )
 
-            VALUES (?, ?, ?, ?, ?)
+            VALUES (
+                ?, ?, ?, ?, ?
+            )
 
             ON CONFLICT (
                 employee_id,
@@ -3109,44 +4699,66 @@ def availability(staff_id):
                 end_time =
                     excluded.end_time
         """, (
+
             staff_id,
+
             work_date,
+
             preference_type,
+
             start_time,
+
             end_time
+
         ))
 
+
         conn.commit()
+
         conn.close()
+
 
         flash(
             "勤務希望を保存しました"
         )
 
+
         return redirect(
             f"/availability/{staff_id}"
         )
 
-    availability_list = conn.execute("""
-        SELECT
-            id,
-            work_date,
-            preference_type,
-            start_time,
-            end_time
 
-        FROM availability
+    availability_list = (
+        conn.execute("""
+            SELECT
+                id,
 
-        WHERE employee_id = ?
+                work_date,
 
-        ORDER BY work_date
-    """, (
-        staff_id,
-    )).fetchall()
+                preference_type,
+
+                start_time,
+
+                end_time
+
+            FROM availability
+
+            WHERE
+                employee_id = ?
+
+            ORDER BY
+                work_date
+        """, (
+            staff_id,
+        )).fetchall()
+    )
+
 
     conn.close()
 
+
     return render_template(
+
         "availability.html",
 
         staff=staff,
@@ -3157,6 +4769,10 @@ def availability(staff_id):
     )
 
 
+# ==================================================
+# 删除勤務希望
+# ==================================================
+
 @app.route(
     "/availability/delete/<int:availability_id>"
 )
@@ -3165,37 +4781,58 @@ def delete_availability(
     availability_id
 ):
 
-    conn = get_db_connection()
+    conn = (
+        get_db_connection()
+    )
 
-    record = conn.execute("""
-        SELECT employee_id
 
-        FROM availability
+    record = (
+        conn.execute("""
+            SELECT
+                employee_id
 
-        WHERE id = ?
-    """, (
-        availability_id,
-    )).fetchone()
+            FROM availability
 
-    if record is None:
+            WHERE
+                id = ?
+        """, (
+            availability_id,
+        )).fetchone()
+    )
+
+
+    if (
+        record is None
+    ):
 
         conn.close()
-        return redirect("/staff")
 
-    staff_id = record[
-        "employee_id"
-    ]
+        return redirect(
+            "/staff"
+        )
+
+
+    staff_id = (
+        record[
+            "employee_id"
+        ]
+    )
+
 
     conn.execute("""
         DELETE FROM availability
 
-        WHERE id = ?
+        WHERE
+            id = ?
     """, (
         availability_id,
     ))
 
+
     conn.commit()
+
     conn.close()
+
 
     return redirect(
         f"/availability/{staff_id}"
@@ -3203,31 +4840,49 @@ def delete_availability(
 
 
 # ==================================================
-# 必要人数
+# 必要人数设置
 # ==================================================
 
 @app.route(
     "/requirements",
-    methods=["GET", "POST"]
+    methods=[
+        "GET",
+        "POST"
+    ]
 )
 @login_required
 def requirements():
 
-    conn = get_db_connection()
+    conn = (
+        get_db_connection()
+    )
 
-    if request.method == "POST":
 
-        work_date = request.form[
-            "work_date"
-        ]
+    if (
+        request.method
+        == "POST"
+    ):
 
-        start_time = request.form[
-            "start_time"
-        ]
+        work_date = (
+            request.form[
+                "work_date"
+            ]
+        )
 
-        end_time = request.form[
-            "end_time"
-        ]
+
+        start_time = (
+            request.form[
+                "start_time"
+            ]
+        )
+
+
+        end_time = (
+            request.form[
+                "end_time"
+            ]
+        )
+
 
         required_staff = int(
             request.form[
@@ -3235,13 +4890,24 @@ def requirements():
             ]
         )
 
+
         duration = (
-            time_to_minutes(end_time)
+
+            time_to_minutes(
+                end_time
+            )
+
             -
-            time_to_minutes(start_time)
+
+            time_to_minutes(
+                start_time
+            )
         )
 
-        if duration <= 0:
+
+        if (
+            duration <= 0
+        ):
 
             flash(
                 "終了時間は開始時間より後に設定してください"
@@ -3253,7 +4919,10 @@ def requirements():
                 "/requirements"
             )
 
-        if duration > 480:
+
+        if (
+            duration > 480
+        ):
 
             flash(
                 "1つの必要時間帯は8時間以内に設定してください"
@@ -3265,7 +4934,10 @@ def requirements():
                 "/requirements"
             )
 
-        if required_staff < 1:
+
+        if (
+            required_staff < 1
+        ):
 
             flash(
                 "必要人数は1人以上に設定してください"
@@ -3277,15 +4949,22 @@ def requirements():
                 "/requirements"
             )
 
+
         conn.execute("""
             INSERT INTO staffing_requirements (
+
                 work_date,
+
                 start_time,
+
                 end_time,
+
                 required_staff
             )
 
-            VALUES (?, ?, ?, ?)
+            VALUES (
+                ?, ?, ?, ?
+            )
 
             ON CONFLICT (
                 work_date,
@@ -3294,44 +4973,64 @@ def requirements():
             )
 
             DO UPDATE SET
+
                 required_staff =
-                excluded.required_staff
+                    excluded.required_staff
         """, (
+
             work_date,
+
             start_time,
+
             end_time,
+
             required_staff
+
         ))
 
+
         conn.commit()
+
         conn.close()
+
 
         flash(
             "必要人数を保存しました"
         )
 
+
         return redirect(
             "/requirements"
         )
 
-    requirement_list = conn.execute("""
-        SELECT
-            id,
-            work_date,
-            start_time,
-            end_time,
-            required_staff
 
-        FROM staffing_requirements
+    requirement_list = (
+        conn.execute("""
+            SELECT
+                id,
 
-        ORDER BY
-            work_date,
-            start_time
-    """).fetchall()
+                work_date,
+
+                start_time,
+
+                end_time,
+
+                required_staff
+
+            FROM staffing_requirements
+
+            ORDER BY
+                work_date,
+                start_time
+        """).fetchall()
+    )
+
 
     conn.close()
 
+
     return render_template(
+
         "requirements.html",
 
         requirement_list=(
@@ -3339,6 +5038,10 @@ def requirements():
         )
     )
 
+
+# ==================================================
+# 删除必要人数
+# ==================================================
 
 @app.route(
     "/requirements/delete/<int:requirement_id>"
@@ -3348,18 +5051,25 @@ def delete_requirement(
     requirement_id
 ):
 
-    conn = get_db_connection()
+    conn = (
+        get_db_connection()
+    )
+
 
     conn.execute("""
         DELETE FROM staffing_requirements
 
-        WHERE id = ?
+        WHERE
+            id = ?
     """, (
         requirement_id,
     ))
 
+
     conn.commit()
+
     conn.close()
+
 
     return redirect(
         "/requirements"
